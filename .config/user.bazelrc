@@ -1,0 +1,4 @@
+common --registry=file:///%workspace%/../../obazl/registry
+
+common --override_repository=libs7~0.1.0=/Users/gar/libs7/libs7
+

@@ -1,0 +1,97 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+load("//:BUILD.bzl", "BASE_SRCS",
+     "BASE_DEPS", "BASE_INCLUDE_PATHS",
+     "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
+     "TIMEOUT",
+     "LIBS7_VERSION",
+     "GOPT_VERSION",
+     "LIBLOG_CC_VERSION",
+     "UNITY_VERSION",
+     "UTHASH_VERSION")
+
+# load("//:BUILD.bzl",
+#      "BASE_SRCS", "BASE_DEPS", "BASE_INCLUDE_PATHS",
+#      "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS")
+
+# load("//test:BUILD.bzl",
+#      "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
+#      "TEST_COPTS", "TEST_DEFINES", "TEST_LINKOPTS",
+#      "TIMEOUT")
+
+SRCS          = BASE_SRCS + [
+    "//test:common.c", "//test:common.h",
+]
+DEPS          = BASE_DEPS + [
+    "//src:sexp_s7",
+    "@gopt//:gopt",
+    "@unity//src:unity",
+    "@uthash//src:uthash",
+]
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Iconfig",
+    "-Isrc",
+    "-Itest",
+    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
+    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
+    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEFINES       = BASE_DEFINES
+LINKOPTS      = BASE_LINKOPTS
+
+TAGS = ["sexp", "readers", "read-errrors"]
+
+# SRCS          = BASE_SRCS + TEST_SRCS
+# INCLUDE_PATHS = BASE_INCLUDE_PATHS + TEST_INCLUDE_PATHS
+# COPTS         = BASE_COPTS + TEST_COPTS + INCLUDE_PATHS
+# DEPS          = BASE_DEPS + TEST_DEPS
+# DEFINES       = BASE_DEFINES + TEST_DEFINES
+# LINKOPTS      = BASE_LINKOPTS + TEST_LINKOPTS
+
+TAGS = ["sexp", "readers", "read-errrors"]
+
+# make test files in subdirs accessible from this pkg
+# exports_files(glob(["case010/*"]))
+
+################################################################
+cc_test(
+    name = "include",
+    linkstatic = True,
+    srcs = SRCS + ["Include_test.c"],
+            # "//test/unit:common.c", "//test/unit:common.h",
+            # "//src:libs7.h"],
+    local_defines = DEFINES,
+    data = [
+        "//test/include/case010:data",
+        "//test/include/case011:data",
+        "//test/include/case013:data",
+        "//test/include/case015:data",
+        "//test/include/case016:data",
+
+        "//test/include/case020:data",
+        "//test/include/case022:data",
+        "//test/include/case023:data",
+        "//test/include/case024:data",
+        "//test/include/case025:data",
+        "//test/include/case026:data",
+
+        "//test/include/case040:data",
+        "//test/include/case042:data",
+        "//test/include/case050:data",
+    ],
+    deps = DEPS + [
+        # "//lib/libsexp:sexp_s7_archive",
+    ],
+    copts = COPTS + [
+        # "-Isrc",
+        # "-Idev",
+        # "-Itest/unit",
+        # "-I$(GENDIR)/lib/libtoml",
+        # "-I$(GENDIR)/external/libs7/lib/libtoml",
+        # "-fno-pie"
+    ],
+    linkopts = LINKOPTS,
+    timeout = TIMEOUT,
+    tags = TAGS + ["readers"]
+)

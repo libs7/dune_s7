@@ -1,0 +1,89 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+load("//:BUILD.bzl", "BASE_SRCS",
+     "BASE_DEPS", "BASE_INCLUDE_PATHS",
+     "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
+     "LIBS7_VERSION",
+     "GOPT_VERSION",
+     "LIBLOG_CC_VERSION",
+     "UNITY_VERSION",
+     "UTHASH_VERSION")
+
+SRCS          = BASE_SRCS + [
+    "//test:common.c", "//test:common.h",
+    # "@libs7//src:libs7.h"
+]
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Iconfig",
+    "-Isrc",
+    "-Itest",
+    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
+    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
+    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+    # "-Iexternal/liblog_cc~{}/src".format(LIBLOG_CC_VERSION),
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEPS          = BASE_DEPS + [
+    "//src:sexp_s7",
+    "@gopt//:gopt",
+    "@unity//src:unity",
+    "@uthash//src:uthash",
+    # "@liblog_cc//src:logc",
+]
+DEFINES       = BASE_DEFINES
+LINKOPTS      = BASE_LINKOPTS
+
+TAGS = ["sexp", "readers", "read-errrors"]
+TIMEOUT = "short"
+
+# exports_files(["case010.dune"])
+
+# filegroup(
+#     name = "data",
+#     data = glob(["*.dune", "*.expected"]),
+#     visibility = ["//visibility:public"]
+# )
+
+# make test files in subdirs accessible from this pkg
+# exports_files(glob(["case010/*"]))
+
+################################################################
+cc_test(
+    name = "file",
+    linkstatic = True,
+    srcs = SRCS + ["file_readers_test.c"],
+    local_defines = DEFINES,
+    data = ["case010.dune", "case010.expected"],
+    deps = DEPS,
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    timeout = TIMEOUT,
+    tags = TAGS
+)
+
+# cc_test(
+#     name = "readers",
+#     linkstatic = True,
+#     srcs = SRCS + ["sexp_readers_test.c"],
+#             # "common.c", "common.h",
+#             # "@libs7//src:libs7.h"],
+#     local_defines = DEFINES,
+#     data = [
+#         "//test/data:scm",
+#         "//test/data/scm/baddot/case010:data",
+#     ],
+#     deps = DEPS + [
+#         "//lib/libsexp:sexp_s7_archive",
+#     ],
+#     copts = COPTS + [
+#         "-Isrc",
+#         "-Idev",
+#         "-Itest/unit",
+#         "-I$(GENDIR)/lib/libtoml",
+#         "-I$(GENDIR)/external/libs7/lib/libtoml",
+#         # "-fno-pie"
+#     ],
+#     linkopts = LINKOPTS,
+#     timeout = TIMEOUT,
+#     tags = TAGS + ["readers"]
+# )

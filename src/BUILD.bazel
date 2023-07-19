@@ -1,0 +1,64 @@
+package(default_visibility = ["//visibility:public"])
+
+# sexp:read produces an alist. corrects the following reader errors in
+# dune files: bad dot e.g. (run %{exe:test_clic.exe} .); end-of-line
+# string literals e.g. "\| this is a string
+
+load("//:BUILD.bzl",
+     "BASE_SRCS", "BASE_DEPS",
+     "BASE_COPTS", "BASE_INCLUDE_PATHS",
+     "BASE_DEFINES", "BASE_LINKOPTS",
+     "LIBS7_VERSION",
+     "LIBLOG_CC_VERSION",
+     "UTHASH_VERSION")
+
+SRCS = [] # BASE_SRCS + ["@libs7//src:s7.h"]
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Iconfig",
+    # "-Iexternal/libs7~{}/src".format(LIBS7_VERSION),
+    # "-Iexternal/liblog_cc~{}/src".format(LIBLOG_CC_VERSION),
+    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEPS          = BASE_DEPS + [
+    "@uthash//src:uthash",
+    # "@liblog_cc//src:logc",
+    # "@libs7//src:s7",
+    # "@libs7//lib:utils",
+    # "@cjson//:cjson"
+]
+
+DEFINES       = BASE_DEFINES
+LINKOPTS      = BASE_LINKOPTS
+
+##########
+cc_library(
+    name  = "sexp_s7",
+    linkstatic = True,
+    alwayslink = True,
+    srcs = SRCS + [
+        "libsexp_s7.c",
+        "libsexp_s7.h",
+        # "error_handler_sexp.c",
+        # "error_handler_sexp.h"
+    ] + select({
+        "@platforms//os:linux": [
+            # "//src/linux:strlcat.c",
+            # "//src/linux:strlcpy.c",
+            # "//src/linux:strnstr.c"
+        ],
+        "//conditions:default":   []
+    }),
+    copts = COPTS + [
+        # "-Iexternal/uthash~{}//src".format(UTHASH_VERSION),
+        # "-Ivendored/uthash",
+        # "-Iexternal/libs7/vendored/uthash",
+    ],
+    deps = DEPS + [
+        # "@uthash//src:uthash",
+        # "//vendored/uthash",
+        # "//src:s7",
+    ],
+    defines = DEFINES,
+    visibility = ["//visibility:public"]
+)

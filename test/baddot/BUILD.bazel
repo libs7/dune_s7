@@ -1,0 +1,55 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+load("//:BUILD.bzl", "BASE_SRCS",
+     "BASE_DEPS", "BASE_INCLUDE_PATHS",
+     "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
+     "TIMEOUT",
+     "LIBS7_VERSION",
+     "GOPT_VERSION",
+     "LIBLOG_CC_VERSION",
+     "UNITY_VERSION",
+     "UTHASH_VERSION")
+
+SRCS          = BASE_SRCS + [
+    "//test:common.c", "//test:common.h",
+]
+DEPS          = BASE_DEPS + [
+    "//src:sexp_s7",
+    "@gopt//:gopt",
+    "@unity//src:unity",
+    "@uthash//src:uthash",
+]
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Iconfig",
+    "-Isrc",
+    "-Itest",
+    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
+    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
+    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEFINES       = BASE_DEFINES
+LINKOPTS      = BASE_LINKOPTS
+
+TAGS = ["sexp", "readers", "read-errrors"]
+
+# make test files in subdirs accessible from this pkg
+# exports_files(glob(["case010/*"]))
+
+################################################################
+cc_test(
+    name = "baddot",
+    linkstatic = True,
+    srcs = SRCS + ["baddot_test.c"],
+    local_defines = DEFINES,
+    data = [
+        "//test/baddot/case010:data",
+        "//test/baddot/case020:data",
+        "//test/baddot/case030:data",
+    ],
+    deps = DEPS,
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    timeout = TIMEOUT,
+    tags = TAGS + ["readers"]
+)

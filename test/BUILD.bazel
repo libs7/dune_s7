@@ -1,0 +1,50 @@
+exports_files(["common.c", "common.h"])
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+load("//:BUILD.bzl",
+     "BASE_SRCS", "BASE_DEPS",
+     "BASE_COPTS", "BASE_INCLUDE_PATHS",
+     "BASE_DEFINES", "BASE_LINKOPTS",
+     "LIBS7_VERSION",
+     "GOPT_VERSION",
+     "LIBLOG_CC_VERSION",
+     "UNITY_VERSION",
+     "UTHASH_VERSION")
+
+SRCS          = BASE_SRCS + [
+    "common.c", "common.h",
+]
+
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Isrc",
+    "-Iconfig",
+    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
+    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
+    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+    # "-Iexternal/liblog_cc~{}/src".format(LIBLOG_CC_VERSION),
+]
+
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEPS          = BASE_DEPS + [
+    "//src:sexp_s7",
+    "@gopt//:gopt",
+    "@unity//src:unity",
+    "@uthash//src:uthash",
+    # "@liblog_cc//src:logc",
+]
+DEFINES       = BASE_DEFINES
+LINKOPTS      = BASE_LINKOPTS
+
+TAGS = ["sexp", "readers"]
+TIMEOUT = "short"
+
+################################################################
+test_suite(
+    name  = "test",
+    tests = [
+        "//test/baddot",
+        "//test/include",
+        "//test/readers:file",
+    ]
+)
