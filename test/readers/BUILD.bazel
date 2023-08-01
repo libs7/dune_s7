@@ -24,7 +24,7 @@ INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
 ]
 COPTS         = BASE_COPTS + INCLUDE_PATHS
 DEPS          = BASE_DEPS + [
-    "//src:sexp_s7",
+    "//src:dune_s7",
     "@gopt//:gopt",
     "@unity//src:unity",
     "@uthash//src:uthash",
@@ -73,7 +73,7 @@ cc_test(
 #         "//test/data/scm/baddot/case010:data",
 #     ],
 #     deps = DEPS + [
-#         "//lib/libsexp:sexp_s7_archive",
+#         "//lib/libsexp:dune_s7_archive",
 #     ],
 #     copts = COPTS + [
 #         "-Isrc",

@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-# sexp:read produces an alist. corrects the following reader errors in
+# dune:read produces an alist. corrects the following reader errors in
 # dune files: bad dot e.g. (run %{exe:test_clic.exe} .); end-of-line
 # string literals e.g. "\| this is a string
 
@@ -8,6 +8,7 @@ load("//:BUILD.bzl",
      "BASE_SRCS", "BASE_DEPS",
      "BASE_COPTS", "BASE_INCLUDE_PATHS",
      "BASE_DEFINES", "BASE_LINKOPTS",
+     "DUNE_S7_VERSION",
      "LIBS7_VERSION",
      "LIBLOG_CC_VERSION",
      "UTHASH_VERSION")
@@ -33,14 +34,14 @@ LINKOPTS      = BASE_LINKOPTS
 
 ##########
 cc_library(
-    name  = "sexp_s7",
+    name  = "dune_s7",
     linkstatic = True,
     alwayslink = True,
     srcs = SRCS + [
-        "libsexp_s7.c",
-        "libsexp_s7.h",
-        # "error_handler_sexp.c",
-        # "error_handler_sexp.h"
+        "dune_s7.c",
+        "dune_s7.h",
+        # "error_handler_dune.c",
+        # "error_handler_dune.h"
     ] + select({
         "@platforms//os:linux": [
             # "//src/linux:strlcat.c",

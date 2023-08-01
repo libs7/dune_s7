@@ -1,5 +1,5 @@
+DUNE_S7_VERSION     = "0.1.0"
 LIBS7_VERSION = "0.1.0"
-SEXP_S7_VERSION = "0.1.0"
 
 GOPT_VERSION = "10.0.0"
 LIBLOG_CC_VERSION = "1.0.0"
@@ -9,17 +9,17 @@ UNITY_VERSION = "2.5.2"
 UTHASH_VERSION = "2.3.0"
 
 module(
-    name = "sexp_s7",
-    version = SEXP_S7_VERSION,
-    compatibility_level = 1
+    name = "dune_s7",
+    version = DUNE_S7_VERSION,
+    compatibility_level = 0
 )
 
 bazel_dep(name = "platforms", version = PLATFORMS_VERSION)
 bazel_dep(name = "rules_cc",  version = RULES_CC_VERSION)
+bazel_dep(name = "liblog_cc",  version = LIBLOG_CC_VERSION)
+bazel_dep(name = "uthash", version = UTHASH_VERSION)
 
 bazel_dep(name = "gopt", version = GOPT_VERSION, dev_dependency=True)
-bazel_dep(name = "uthash", version = UTHASH_VERSION, dev_dependency=True)
-bazel_dep(name = "liblog_cc",  version = LIBLOG_CC_VERSION, dev_dependency=True)
 bazel_dep(name = "unity",  version = UNITY_VERSION, dev_dependency=True)
 
 bazel_dep(name = "libs7", version = LIBS7_VERSION)

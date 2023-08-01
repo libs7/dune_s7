@@ -1,19 +1,19 @@
 /*
   protocol:
-  (sexp:read)
-    g_sexp_read
-      _g_sexp_read
-        _sexp_read_thunk
+  (dune:read)
+    g_dune_read
+      _g_dune_read
+        _dune_read_thunk
 
   read error:
-  (sexp:read)
-    g_sexp_read
-      _g_sexp_read
-        _sexp_read_thunk
-        _sexp_read_catcher
-          fix_sexpfile
-            sexpfile_to_string
-          _sexp_read_thunk
+  (dune:read)
+    g_dune_read
+      _g_dune_read
+        _dune_read_thunk
+        _dune_read_catcher
+          fix_dunefile
+            dunefile_to_string
+          _dune_read_thunk
             returns to
 
  */
@@ -36,8 +36,8 @@
 
 #include "config.h"
 #include "utstring.h"
-#include "libsexp_s7.h"
-/* #include "error_handler_sexp.h" */
+#include "dune_s7.h"
+/* #include "error_handler_dune.h" */
 #include "s7.h"
 
 //extern FIXME
@@ -49,14 +49,14 @@ static s7_pointer int64_t__symbol, FILE__symbol;
 
 s7_pointer result;
 
-s7_pointer _inport_sym;         /* -sexp-inport */
-s7_pointer _infile_sym;         /* -sexp-infile */
-s7_pointer _sexps_sym;          /* -sexp-sexps */
+s7_pointer _inport_sym;         /* -dune-inport */
+s7_pointer _infile_sym;         /* -dune-infile */
+s7_pointer _dune_sexps;          /* -dune-sexps */
 
 /* needed by read thunk and catcher */
-/* const char *g_sexpfile; */
-/* s7_pointer g_sexp_inport; */
-/* s7_int gc_sexp_inport = -1; */
+/* const char *g_dunefile; */
+/* s7_pointer g_dune_inport; */
+/* s7_int gc_dune_inport = -1; */
 /* s7_pointer g_stanzas; */
 /* s7_int gc_stanzas = -1; */
 
@@ -65,27 +65,27 @@ const char *e; // tmp var for error printing
 
 const char *errmsg;
 
-s7_pointer _sexp_read_catcher_s7;
-s7_int gc_sexp_read_catcher_s7 = -1;
+s7_pointer _dune_read_catcher_s7;
+s7_int gc_dune_read_catcher_s7 = -1;
 
-const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
+const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
-    TRACE_ENTRY(sexpfile_to_string);
+    TRACE_ENTRY(_dunefile_to_string);
 #if defined(TRACING)
-    log_trace("sexpfile: %s", sexpfile_name);
-                  //utstring_body(sexpfile_name));
+    log_trace("dunefile: %s", dunefile_name);
+                  //utstring_body(dunefile_name));
     s7_pointer cip = s7_current_input_port(s7);
     TRACE_S7_DUMP("cip", cip);
 #endif
-    /* core/sexp file size: 45572 */
+    /* core/dune file size: 45572 */
     // 2K
 
     //FIXME: malloc
-/* #define SEXP_BUFSZ 131072 */
-/*     /\* static char inbuf[SEXP_BUFSZ]; *\/ */
-/*     /\* memset(inbuf, '\0', SEXP_BUFSZ); *\/ */
-/*     static char outbuf[SEXP_BUFSZ + 20]; */
-/*     memset(outbuf, '\0', SEXP_BUFSZ); */
+/* #define DUNE_BUFSZ 131072 */
+/*     /\* static char inbuf[DUNE_BUFSZ]; *\/ */
+/*     /\* memset(inbuf, '\0', DUNE_BUFSZ); *\/ */
+/*     static char outbuf[DUNE_BUFSZ + 20]; */
+/*     memset(outbuf, '\0', DUNE_BUFSZ); */
 
     size_t file_size;
     char *inbuf;
@@ -94,7 +94,7 @@ const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
     FILE *instream = NULL;
 
     errno = 0;
-    fd = open(sexpfile_name, O_RDONLY);
+    fd = open(dunefile_name, O_RDONLY);
     if (fd == -1) {
         /* Handle error */
         log_error("fd open error");
@@ -102,7 +102,7 @@ const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
         s7_error(s7, s7_make_symbol(s7, "fd-open-error"),
                  s7_list(s7, 3,
                          s7_make_string(s7, "fd open error: ~A, ~A"),
-                         s7_make_string(s7, sexpfile_name),
+                         s7_make_string(s7, dunefile_name),
                          s7_make_string(s7, strerror(errno))));
     }
 
@@ -129,18 +129,18 @@ const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
     instream = fdopen(fd, "r");
     if (instream == NULL) {
         /* Handle error */
-        log_error("fdopen failure: %s", sexpfile_name);
+        log_error("fdopen failure: %s", dunefile_name);
         /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
-        /*        sexpfile_name); */
-               /* utstring_body(sexpfile_name)); */
+        /*        dunefile_name); */
+               /* utstring_body(dunefile_name)); */
         perror(NULL);
         close(fd);
         goto cleanup;
     } else {
 #if defined(DEVBUILD)
         log_debug("fdopened %s",
-                  sexpfile_name);
-        /* utstring_body(sexpfile_name)); */
+                  dunefile_name);
+        /* utstring_body(dunefile_name)); */
 #endif
     }
 
@@ -152,20 +152,20 @@ const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
     if (read_ct != file_size) {
         if (ferror(instream) != 0) {
             /* printf(RED "ERROR" CRESET "fread error 2 for %s\n", */
-            /*        sexpfile_name); */
-            /* utstring_body(sexpfile_name)); */
+            /*        dunefile_name); */
+            /* utstring_body(dunefile_name)); */
             log_error("fread error 2 for %s\n",
-                      sexpfile_name);
-            /* utstring_body(sexpfile_name)); */
+                      dunefile_name);
+            /* utstring_body(dunefile_name)); */
             exit(EXIT_FAILURE); //FIXME: exit gracefully
         } else {
             if (feof(instream) == 0) {
                 /* printf(RED "ERROR" CRESET "fread error 3 for %s\n", */
-                /*        sexpfile_name); */
-                /* utstring_body(sexpfile_name)); */
+                /*        dunefile_name); */
+                /* utstring_body(dunefile_name)); */
                 log_error("fread error 3 for %s\n",
-                          sexpfile_name);
-                /* utstring_body(sexpfile_name)); */
+                          dunefile_name);
+                /* utstring_body(dunefile_name)); */
                 exit(EXIT_FAILURE); //FIXME: exit gracefully
             } else {
                 //FIXME
@@ -269,20 +269,20 @@ const char *sexpfile_to_string(s7_scheme *s7, const char *sexpfile_name)
 /*             log_debug("copied %d chars", ct); */
 /*             /\* log_debug("to buf: '%s'", outptr); *\/ */
 /* #endif */
-/*             /\* if (ct >= SEXP_BUFSZ) { *\/ */
+/*             /\* if (ct >= DUNE_BUFSZ) { *\/ */
 /*             if (ct >= outFileSizeCounter) { */
 /*                 printf("output string has been truncated!\n"); */
 /*             } */
 /*             outptr = outptr + (cursor - inptr) - 1; */
 /*             outptr[cursor - inptr] = '\0'; */
 /*             //FIXME: use memcpy */
-/*             ct = strlcat(outptr, " ./", outFileSizeCounter); // SEXP_BUFSZ); */
+/*             ct = strlcat(outptr, " ./", outFileSizeCounter); // DUNE_BUFSZ); */
 /*             outptr += 3; */
 
 /*             inptr = inptr + (cursor - inptr) + 1; */
 /*             /\* printf(GRN "inptr:\n" CRESET " %s\n", inptr); *\/ */
 
-/*             if (ct >= outFileSizeCounter) { // SEXP_BUFSZ) { */
+/*             if (ct >= outFileSizeCounter) { // DUNE_BUFSZ) { */
 /*                 log_error("write count exceeded output bufsz\n"); */
 /*                 /\* printf(RED "ERROR" CRESET "write count exceeded output bufsz\n"); *\/ */
 /*                 free(inbuf); */
@@ -304,17 +304,17 @@ cleanup:
     return NULL;
 }
 
-static s7_pointer _sexp_read_input_port(s7_scheme*s7, s7_pointer port);
-static s7_pointer _sexp_read_string(s7_scheme*s7, s7_pointer s);
+static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer port);
+static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer s);
 
-s7_pointer fix_sexpfile(s7_scheme *s7, const char *sexpfile_name)
+s7_pointer fix_dunefile(s7_scheme *s7, const char *dunefile_name)
 {
-    TRACE_ENTRY(fix_sexpfile);
-    TRACE_LOG_DEBUG("sexpfile: %s", sexpfile_name);
+    TRACE_ENTRY(fix_dunefile);
+    TRACE_LOG_DEBUG("dunefile: %s", dunefile_name);
 
-    const char *sexpstring = sexpfile_to_string(s7, sexpfile_name);
+    const char *dunestring = _dunefile_to_string(s7, dunefile_name);
 
-    /* log_debug("read corrected string: %s", sexpstring); */
+    /* log_debug("read corrected string: %s", dunestring); */
 
     /* now s7_read using string port */
 
@@ -323,8 +323,8 @@ s7_pointer fix_sexpfile(s7_scheme *s7, const char *sexpfile_name)
     /* error_config(); */
     /* init_error_handling(); */
 
-    s7_pointer _inport = s7_open_input_string(s7, sexpstring);
-    if (!s7_is_input_port(s7, _inport)) { // g_sexp_inport)) {
+    s7_pointer _inport = s7_open_input_string(s7, dunestring);
+    if (!s7_is_input_port(s7, _inport)) { // g_dune_inport)) {
         log_error("BAD INPUT PORT");
         s7_error(s7, s7_make_symbol(s7, "bad input port"),
                      s7_nil(s7));
@@ -335,23 +335,23 @@ s7_pointer fix_sexpfile(s7_scheme *s7, const char *sexpfile_name)
                    s7_list(s7, 3,
                            s7_cons(s7, _inport_sym, _inport),
                            s7_cons(s7, _infile_sym,
-                                   s7_make_string(s7, sexpfile_name)),
-                           s7_cons(s7, _sexps_sym, s7_nil(s7))));
+                                   s7_make_string(s7, dunefile_name)),
+                           s7_cons(s7, _dune_sexps, s7_nil(s7))));
 
-    TRACE_LOG_DEBUG("reading corrected string from port: %s", sexpstring);
-    const char *sexp = "(catch #t -sexp-read-thunk -sexp-read-catcher)";
+    TRACE_LOG_DEBUG("reading corrected string from port: %s", dunestring);
+    const char *dune = "(catch #t -dune-read-thunk -dune-read-catcher)";
     // same as (with-let (inlet ...) (catch...)) ???
-    /* log_debug("evaluating c string %s", sexp); */
+    /* log_debug("evaluating c string %s", dune); */
     s7_pointer result
-        = s7_eval_c_string_with_environment(s7, sexp, readlet);
+        = s7_eval_c_string_with_environment(s7, dune, readlet);
 
-    /* result = _sexp_read_input_port(s7, _inport); */
+    /* result = _dune_read_input_port(s7, _inport); */
 
-    /* TRACE_LOG_DEBUG("reading corrected string:  %s", sexpstring); */
-    /* result = _sexp_read_string(s7, s7_make_string(s7,sexpstring)); */
+    /* TRACE_LOG_DEBUG("reading corrected string:  %s", dunestring); */
+    /* result = _dune_read_string(s7, s7_make_string(s7,dunestring)); */
 
     TRACE_S7_DUMP("fixed stanzas", result);
-    free((void*)sexpstring);
+    free((void*)dunestring);
     return result;
 
     /* **************************************************************** */
@@ -364,54 +364,54 @@ s7_pointer fix_sexpfile(s7_scheme *s7, const char *sexpfile_name)
     /* } else { */
     /* log_debug("varletting curlet..."); */
     /* s7_varlet(s7, s7_curlet(s7), */
-    /*            s7_make_symbol(s7, "-sexp-inport"), */
+    /*            s7_make_symbol(s7, "-dune-inport"), */
     /*            _inport); */
 
     /* s7_varlet(s7, s7_curlet(s7), */
-    /*               s7_make_symbol(s7, "-sexp-infile"), */
-    /*               s7_make_string(s7, sexpfile_name)); */
+    /*               s7_make_symbol(s7, "-dune-infile"), */
+    /*               s7_make_string(s7, dunefile_name)); */
 
     /* s7_varlet(s7, s7_curlet(s7), */
-    /*               s7_make_symbol(s7, "-sexp-sexps"), */
+    /*               s7_make_symbol(s7, "-dune-dunes"), */
     /*               s7_nil(s7)); */
 
-    log_debug("SEXPFILE_NAME: %s", sexpfile_name);
+    log_debug("DUNEFILE_NAME: %s", dunefile_name);
     s7_pointer env = s7_inlet(s7,
                               s7_list(s7, 1,
                                       s7_cons(s7, _inport_sym, _inport),
                                       s7_cons(s7, _infile_sym,
-                                              s7_make_string(s7, sexpfile_name)),
+                                              s7_make_string(s7, dunefile_name)),
 
-                                      s7_cons(s7, _sexps_sym, s7_nil(s7))
+                                      s7_cons(s7, _dune_sexps, s7_nil(s7))
                                       ));
-    // WARNING: if the call to -g-sexp-read raises an error that gets
+    // WARNING: if the call to -g-dune-read raises an error that gets
     // handled by the catcher, then the continuation is whatever
     // called this routine (i.e. the c stack), NOT the assignment to
     // result below.
-    s7_pointer stanzas = s7_eval_c_string_with_environment(s7, "(apply -g-sexp-read (list -sexp-inport))", env);
+    s7_pointer stanzas = s7_eval_c_string_with_environment(s7, "(apply -g-dune-read (list -dune-inport))", env);
 
-    //FIXME: this should use s7_eval_c_string... in case sexpstring
+    //FIXME: this should use s7_eval_c_string... in case dunestring
     //has an error.
 
     // (with-let (inlet ...)
-    //        (with-input-from-string sexpstring sexp:read))
+    //        (with-input-from-string dunestring dune:read))
 
     /* s7_pointer stanzas = s7_call_with_catch(s7, */
     /*                                 s7_t(s7),      /\* tag *\/ */
-    /*                                 // _sexp_read_thunk_s7 */
-    /*                                 s7_name_to_value(s7, "-sexp-read-thunk"), */
-    /*                                 _sexp_read_catcher_s7 */
-    /*                                 /\* s7_name_to_value(s7, "-sexp-read-thunk-catcher") *\/ */
+    /*                                 // _dune_read_thunk_s7 */
+    /*                                 s7_name_to_value(s7, "-dune-read-thunk"), */
+    /*                                 _dune_read_catcher_s7 */
+    /*                                 /\* s7_name_to_value(s7, "-dune-read-thunk-catcher") *\/ */
     /*                                 ); */
     TRACE_S7_DUMP("fixed stanzas", stanzas);
 
     /* s7_close_input_port(s7, sport); */
-    // g_sexp_inport will be closed by caller
+    // g_dune_inport will be closed by caller
     /* s7_gc_unprotect_at(s7, gc_baddot_loc); */
     /* close_error_config(); */
 
     /* leave error config as-is */
-    free((void*)sexpstring);
+    free((void*)dunestring);
     /* return s7_reverse(s7, stanzas); */
     return stanzas;
 }
@@ -466,12 +466,12 @@ void print_c_backtrace(void) // s7_scheme *s7)
 #endif
 
 /*
- * precondition: env contains -sexp-inport, -sexp-infile, -sexp-sexps (accumulator)
+ * precondition: env contains -dune-inport, -dune-infile, -dune-dunes (accumulator)
  */
-s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
-/* s7_pointer _sexp_read_port(s7_scheme *s7, s7_pointer inport) */
+s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
+/* s7_pointer _dune_read_port(s7_scheme *s7, s7_pointer inport) */
 {
-    TRACE_ENTRY(_sexp_read_thunk);
+    TRACE_ENTRY(_dune_read_thunk);
     (void)args;
 
     s7_pointer _curlet = s7_curlet(s7);
@@ -494,39 +494,39 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
     // then the corrected string will be passed as a string port, and
     // the original filename will be lost. But we need the dirname of
     // the original file because the include file is relative. So the
-    // catcher puts -sexp-infile into the curlet.
+    // catcher puts -dune-infile into the curlet.
     // No way to test if _inport is a string port, so we use brute force.
-    const char *sexpfile = s7_port_filename(s7, _inport); // g_sexp_inport);
-    if (sexpfile == NULL) {
+    const char *dunefile = s7_port_filename(s7, _inport); // g_dune_inport);
+    if (dunefile == NULL) {
         /* log_debug("no filename for inport"); */
         /* s7_pointer _curlet = s7_curlet(s7); */
         if (_curlet != s7_nil(s7)) {
-            s7_pointer sexpfile7 = s7_let_ref(s7, s7_curlet(s7), _infile_sym);
-            TRACE_S7_DUMP("curlet -sexp-infile", sexpfile7);
-            sexpfile = s7_string(sexpfile7);
+            s7_pointer dunefile7 = s7_let_ref(s7, s7_curlet(s7), _infile_sym);
+            TRACE_S7_DUMP("curlet -dune-infile", dunefile7);
+            dunefile = s7_string(dunefile7);
         }
     } else {
-        // log_debug("inport filename: %s", sexpfile);
+        // log_debug("inport filename: %s", dunefile);
     }
-    TRACE_LOG_DEBUG("inport file: %s", sexpfile);
+    TRACE_LOG_DEBUG("inport file: %s", dunefile);
 
-    s7_pointer _sexps = NULL;
+    s7_pointer _dunes = NULL;
     if (_curlet != s7_nil(s7)) {
-        _sexps = s7_let_ref(s7, _curlet, _sexps_sym);
-        TRACE_S7_DUMP("_sexps", _sexps);
+        _dunes = s7_let_ref(s7, _curlet, _dune_sexps);
+        TRACE_S7_DUMP("_dunes", _dunes);
     }
 
     /* g_stanzas = s7_list(s7, 0); // s7_nil(s7)); */
     /* gc_stanzas = s7_gc_protect(s7, g_stanzas); */
 
     // so read thunk can access port:
-    /* g_sexpfile_port = inport; */
-    /* gc_sexp_inport = s7_gc_protect(s7, g_sexpfile_port); */
-    /* gc_sexp_inport = s7_gc_protect(s7, g_sexp_inport); */
+    /* g_dunefile_port = inport; */
+    /* gc_dune_inport = s7_gc_protect(s7, g_dunefile_port); */
+    /* gc_dune_inport = s7_gc_protect(s7, g_dune_inport); */
 
 #if defined(DEVBUILD)
     log_debug("reading stanzas");
-    // from sexpfile: %s", sexpfile);
+    // from dunefile: %s", dunefile);
 #endif
 
     //FIXME: error handling
@@ -547,7 +547,7 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
 
         /* s7_show_stack(s7); */
         /* print_c_backtrace(); */
-        s7_pointer stanza = s7_read(s7, _inport); // g_sexp_inport);
+        s7_pointer stanza = s7_read(s7, _inport); // g_dune_inport);
         if (stanza == s7_eof_object(s7)) {
             /* log_debug("EOF"); */
             break;
@@ -565,7 +565,7 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
         /* close_error_config(); */
         /* init_error_handling(); */
         /* error_config(); */
-        /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
+        /* s7_gc_unprotect_at(s7, gc_dune_inport); */
 
         if (stanza == s7_eof_object(s7)) {
 #if defined(DEVBUILD)
@@ -574,7 +574,7 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
             break;
         }
 
-        /* LOG_S7_DEBUG("SEXP", stanza); */
+        /* LOG_S7_DEBUG("DUNE", stanza); */
         /* if (mibl_debug_traversal) */
         /*     LOG_S7_DEBUG("stanza", stanza); */
 
@@ -593,68 +593,68 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
                 s7_pointer inc_file = s7_cadr(stanza);
                 TRACE_S7_DUMP("    including", inc_file);
 
-                TRACE_LOG_DEBUG("sexpfile: %s", sexpfile);
-                char *tmp = strdup(sexpfile);
+                TRACE_LOG_DEBUG("dunefile: %s", dunefile);
+                char *tmp = strdup(dunefile);
                 const char *dir = dirname(tmp);
                 free((void*)tmp);
 
-                UT_string *sexppath;
-                utstring_new(sexppath);
+                UT_string *dunepath;
+                utstring_new(dunepath);
                 const char *tostr = s7_object_to_c_string(s7, inc_file);
                 TRACE_LOG_DEBUG("INCFILE: %s", tostr);
-                utstring_printf(sexppath,
+                utstring_printf(dunepath,
                                 "%s/%s",
                                 //FIXME: dirname may mutate its arg
                                 //dirname(path),
                                 dir,
                                 tostr);
 
-                /* g_sexpfile_port = sexpfile_port; */
+                /* g_dunefile_port = dunefile_port; */
                 /* /\* LOG_S7_DEBUG("nested", nested); *\/ */
                 /* /\* LOG_S7_DEBUG("stanzas", stanzas); *\/ */
 
-                if (s7_name_to_value(s7, "*sexp:expand-includes*")
+                if (s7_name_to_value(s7, "*dune:expand-includes*")
                     == s7_t(s7)) {
 
                     s7_pointer env = s7_inlet(s7,
                                               s7_list(s7, 1,
                                                       s7_cons(s7,
                                       s7_make_symbol(s7, "datafile"),
-                        s7_make_string(s7, utstring_body(sexppath)))));
+                        s7_make_string(s7, utstring_body(dunepath)))));
 
-                    TRACE_LOG_DEBUG("expanding: %s", utstring_body(sexppath));
+                    TRACE_LOG_DEBUG("expanding: %s", utstring_body(dunepath));
                     //FIXME: use
                     // (with-let (inlet ...) (with-input-from-file ...))
                     s7_pointer expanded
                         = s7_eval_c_string_with_environment(s7,
-                           "(with-input-from-file datafile sexp:read)",
+                           "(with-input-from-file datafile dune:read)",
                                                             env);
                     TRACE_LOG_DEBUG("expansion completed", "");
                 /* s7_pointer expanded = s7_call_with_catch(s7, */
                 /*                     s7_t(s7),      /\* tag *\/ */
-                /*                     // _sexp_read_thunk_s7 */
-                /*                     s7_name_to_value(s7, "-sexp-read-thunk"), */
-                /*                     _sexp_read_catcher_s7 */
-                /*                     /\* s7_name_to_value(s7, "-sexp-read-thunk-catcher") *\/ */
+                /*                     // _dune_read_thunk_s7 */
+                /*                     s7_name_to_value(s7, "-dune-read-thunk"), */
+                /*                     _dune_read_catcher_s7 */
+                /*                     /\* s7_name_to_value(s7, "-dune-read-thunk-catcher") *\/ */
                 /*                     ); */
 
-                    /* _sexps = s7_append(s7, expanded, _sexps); */
-                    _sexps = s7_append(s7, s7_reverse(s7, expanded), _sexps);
-                    /* const char *x = s7_object_to_c_string(s7, _sexps); */
-                    /* log_debug("_sexps w/inc: %s", x); */
+                    /* _dunes = s7_append(s7, expanded, _dunes); */
+                    _dunes = s7_append(s7, s7_reverse(s7, expanded), _dunes);
+                    /* const char *x = s7_object_to_c_string(s7, _dunes); */
+                    /* log_debug("_dunes w/inc: %s", x); */
                     /* free((void*)x); */
 
                     /* s7_pointer cmt = s7_cons(s7, */
-                    /*                          s7_make_symbol(s7, "sexp:cmt"), */
+                    /*                          s7_make_symbol(s7, "dune:cmt"), */
                     /*                          s7_list(s7, 1, */
                     /*                                  stanza)); */
                     /* g_stanzas = s7_cons(s7, cmt, g_stanzas); */
                 } else {
-                    _sexps = s7_cons(s7, stanza, _sexps);
+                    _dunes = s7_cons(s7, stanza, _dunes);
                 }
             } else {
-                _sexps = s7_cons(s7, stanza, _sexps);
-                TRACE_S7_DUMP("_sexps", _sexps);
+                _dunes = s7_cons(s7, stanza, _dunes);
+                TRACE_S7_DUMP("_dunes", _dunes);
 
                 /* g_stanzas = s7_cons(s7, stanza, g_stanzas); */
                 /* TRACE_S7_DUMP("g_stanzas", g_stanzas); */
@@ -665,44 +665,44 @@ s7_pointer _sexp_read_thunk(s7_scheme *s7, s7_pointer args)
                 /* } */
             }
         } else {
-            /* stanza not a pair - automatically means corrupt sexpfile? */
-            log_error("corrupt sexp file? %s\n",
-                      // utstring_body(sexpfile_name)
+            /* stanza not a pair - automatically means corrupt dunefile? */
+            log_error("corrupt dune file? %s\n",
+                      // utstring_body(dunefile_name)
                       "FIXME"
                       );
-            s7_error(s7, s7_make_symbol(s7, "corrupt-sexp-file"),
+            s7_error(s7, s7_make_symbol(s7, "corrupt-dune-file"),
                      s7_nil(s7));
         }
     }
-    /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-    /* fprintf(stderr, "s7_gc_unprotect_at gc_sexp_inport: %ld\n", (long)gc_sexp_inport); */
+    /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+    /* fprintf(stderr, "s7_gc_unprotect_at gc_dune_inport: %ld\n", (long)gc_dune_inport); */
     /* s7_close_input_port(s7, inport); */
-    // g_sexp_inport must be closed by caller (e.g. with-input-from-file)
+    // g_dune_inport must be closed by caller (e.g. with-input-from-file)
 
 #if defined(DEVBUILD)
-    log_debug("finished reading sexpfile");
+    log_debug("finished reading dunefile");
 #endif
 
-    /* return _sexps; */
-    return s7_reverse(s7, _sexps);
+    /* return _dunes; */
+    return s7_reverse(s7, _dunes);
     /* return g_stanzas; */
-    /* s7_close_input_port(s7, sexpfile_port); */
+    /* s7_close_input_port(s7, dunefile_port); */
     /* s7_gc_unprotect_at(s7, gc_loc); */
 }
 
-s7_pointer _sexp_read_thunk_s7; /* initialized by init fn */
+s7_pointer _dune_read_thunk_s7; /* initialized by init fn */
 
-/* impl of _sexp_read_thunk_s7 */
+/* impl of _dune_read_thunk_s7 */
 /* call by s7_call_with_catch as body arg*/
-/* s7_pointer x_sexp_read_thunk(s7_scheme *s7, s7_pointer args) { */
+/* s7_pointer x_dune_read_thunk(s7_scheme *s7, s7_pointer args) { */
 /*     (void)args; */
-/*     TRACE_ENTRY(_sexp_read_thunk); */
+/*     TRACE_ENTRY(_dune_read_thunk); */
 /* /\* #if defined(DEVBUILD) *\/ */
 /* /\*     print_c_backtrace(); *\/ */
 /* /\* #endif *\/ */
-/*     /\* log_debug("reading sexpfile: %s", g_sexpfile); *\/ */
+/*     /\* log_debug("reading dunefile: %s", g_dunefile); *\/ */
 
-/*     return _sexp_read_port(s7, g_sexp_inport); */
+/*     return _dune_read_port(s7, g_dune_inport); */
 /* } */
 
 void _log_read_error(s7_scheme *s7)
@@ -741,20 +741,20 @@ void _log_read_error(s7_scheme *s7)
     free((void*)s);
 }
 
-// s7_pointer _sexp_read_catcher_s7; /* initialized by init fn */
+// s7_pointer _dune_read_catcher_s7; /* initialized by init fn */
 
 /* call by s7_call_with_catch as error_handler arg
    arg0: err symbol, e.g.'read-error
    arg1: msg, e.g. ("unexpected close paren: ...
    WARNING: we do not correct the error here, just return a sym so
    that caller can decide on corrective action.
-   WARNING: printing s7_stacktrace clobbers globals, esp. g_sexpfile!!!
+   WARNING: printing s7_stacktrace clobbers globals, esp. g_dunefile!!!
  */
-static s7_pointer _sexp_read_catcher(s7_scheme *s7, s7_pointer args)
+static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
 {
     (void)s7;
     (void)args;
-    TRACE_ENTRY(_sexp_read_catcher);
+    TRACE_ENTRY(_dune_read_catcher);
     TRACE_S7_DUMP("args", args);
 
 #if defined(DEVBUILD)
@@ -790,23 +790,23 @@ static s7_pointer _sexp_read_catcher(s7_scheme *s7, s7_pointer args)
 
     // debugging msgs only
     s7_pointer _inport = NULL;
-    s7_pointer _sexps  = NULL;
+    s7_pointer _dunes  = NULL;
     if (_curlet == s7_nil(s7)) {
         log_error("catch curlet is empty");
         /* s7_error(s7, s7_make_symbol(s7, "empty curlet"), s7_nil(s7)); */
     } else {
         _inport = s7_let_ref(s7, s7_curlet(s7),
-                             s7_make_symbol(s7, "-sexp-inport"));
+                             s7_make_symbol(s7, "-dune-inport"));
         TRACE_S7_DUMP("catch curlet inport", _inport);
 
-        _sexps = s7_let_ref(s7, s7_curlet(s7),
-                                       s7_make_symbol(s7, "-sexp-sexps"));
-        TRACE_S7_DUMP("catch sexps", _sexps);
+        _dunes = s7_let_ref(s7, s7_curlet(s7),
+                                       s7_make_symbol(s7, "-dune-dunes"));
+        TRACE_S7_DUMP("catch dunes", _dunes);
     }
 #endif
 
     if (verbose) {
-        log_warn("Error reading sexpfile: %s", errfile);
+        log_warn("Error reading dunefile: %s", errfile);
         e7 = s7_eval_c_string(s7,  "((owlet) 'error-data)");
         e = s7_object_to_c_string(s7, e7);
         log_warn("error-data: %s", e);
@@ -825,7 +825,7 @@ static s7_pointer _sexp_read_catcher(s7_scheme *s7, s7_pointer args)
 /* #endif */
 
     /* if (verbose) { */
-    /*     log_info("fixing sexpfile: %s", errfile); */
+    /*     log_info("fixing dunefile: %s", errfile); */
     /* } */
 
     /* s7_pointer err_sym = s7_car(args); */
@@ -841,31 +841,34 @@ static s7_pointer _sexp_read_catcher(s7_scheme *s7, s7_pointer args)
 
     /* _log_read_error(s7); */
 
-    s7_pointer fixed = fix_sexpfile(s7, errfile);
+    s7_pointer fixed = fix_dunefile(s7, errfile);
     return fixed;
 
     /* const char *s = s7_object_to_c_string(s7, err_msg); */
     /* log_warn("error-data: %s", s); */
     /* if (strstr(s, "(\"unexpected close paren:") != NULL) { */
     /*     free((void*)s); */
-    /*     return s7_make_symbol(s7, "sexp-baddot-error"); */
+    /*     return s7_make_symbol(s7, "dune-baddot-error"); */
     /* } */
     /* else if (strstr(s, */
     /*                 "(\"end of input encountered while in a string") != NULL) { */
     /*     free((void*)s); */
-    /*     return s7_make_symbol(s7, "sexp-eol-string-error"); */
+    /*     return s7_make_symbol(s7, "dune-eol-string-error"); */
     /* } */
 
-    /* return s7_make_symbol(s7, "sexp-read-error"); */
+    /* return s7_make_symbol(s7, "dune-read-error"); */
 }
 
 /* ****************************************************************
-   internal sexp:read impl
+   internal dune:read impl
    uses s7_call_with_catch
  */
-static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
+static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 {
-    TRACE_ENTRY(_g_sexp_read);
+
+    //FIXME: call read_dunefile(char *path)?
+
+    TRACE_ENTRY(_g_dune_read);
     s7_pointer src;
     TRACE_S7_DUMP("args", args);
 
@@ -883,55 +886,55 @@ static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
     /* g_expand_includes = true; */
     if (args == s7_nil(s7)) {
         TRACE_LOG_DEBUG("SOURCE: current-input-port", "");
-        /* result = _sexp_read_port(s7, s7_current_input_port(s7)); */
+        /* result = _dune_read_port(s7, s7_current_input_port(s7)); */
 
-        /* g_sexp_inport = s7_current_input_port(s7); */
-        /* gc_sexp_inport = s7_gc_protect(s7, g_sexp_inport); */
+        /* g_dune_inport = s7_current_input_port(s7); */
+        /* gc_dune_inport = s7_gc_protect(s7, g_dune_inport); */
 
         s7_pointer _curlet = s7_curlet(s7);
-        /* TRACE_S7_DUMP("g_sexp_read curlet", _curlet); */
+        /* TRACE_S7_DUMP("g_dune_read curlet", _curlet); */
 
-        s7_pointer _sexp_inport_sym = s7_make_symbol(s7, "-sexp-inport");
+        s7_pointer _dune_inport_sym = s7_make_symbol(s7, "-dune-inport");
 
         s7_pointer _inport = s7_current_input_port(s7);
-        if (s7_let_ref(s7, _curlet, _sexp_inport_sym)) {
-            log_debug("-sexp-inport in curlet");
-            s7_let_set(s7, _curlet, _sexp_inport_sym, _inport);
+        if (s7_let_ref(s7, _curlet, _dune_inport_sym)) {
+            log_debug("-dune-inport in curlet");
+            s7_let_set(s7, _curlet, _dune_inport_sym, _inport);
         } else {
-            log_debug("adding -sexp-inport to curlet");
-            s7_varlet(s7, _curlet, _sexp_inport_sym, _inport);
+            log_debug("adding -dune-inport to curlet");
+            s7_varlet(s7, _curlet, _dune_inport_sym, _inport);
         }
-        // get sexpfile before calling read thunk, since
+        // get dunefile before calling read thunk, since
         // read errors may close the port
-        const char *sexpfile = s7_port_filename(s7, _inport);
+        const char *dunefile = s7_port_filename(s7, _inport);
         s7_varlet(s7, s7_curlet(s7),
-                  s7_make_symbol(s7, "-sexp-infile"),
-                  s7_make_string(s7, sexpfile));
+                  s7_make_symbol(s7, "-dune-infile"),
+                  s7_make_string(s7, dunefile));
 
         s7_varlet(s7, s7_curlet(s7),
-                  s7_make_symbol(s7, "-sexp-sexps"),
+                  s7_make_symbol(s7, "-dune-dunes"),
                   s7_nil(s7));
 
 /* #if defined(DEVBUILD) */
-/*         const char *sexpfile = s7_port_filename(s7, g_sexp_inport); */
-/*         log_debug("reading sexpfile: %s", sexpfile); */
+/*         const char *dunefile = s7_port_filename(s7, g_dune_inport); */
+/*         log_debug("reading dunefile: %s", dunefile); */
 /* #endif */
 
         result = s7_call_with_catch(s7,
                                     s7_t(s7),      /* tag */
-                                    s7_name_to_value(s7, "-sexp-read-thunk"),
-                                    _sexp_read_catcher_s7
-                                    /* s7_name_to_value(s7, "-sexp-read-thunk-catcher") */
+                                    s7_name_to_value(s7, "-dune-read-thunk"),
+                                    _dune_read_catcher_s7
+                                    /* s7_name_to_value(s7, "-dune-read-thunk-catcher") */
                                     );
 
         if (s7_is_symbol(result)) {
             log_info("read error; correcting...");
-            if (result == s7_make_symbol(s7, "sexp-baddot-error")) {
-                log_debug("fixing baddot error for %s", sexpfile);
+            if (result == s7_make_symbol(s7, "dune-baddot-error")) {
+                log_debug("fixing baddot error for %s", dunefile);
                 TRACE_S7_DUMP("_inport", _inport);
                 /* s7_gc_unprotect_at(s7, gc_stanzas); */
-                /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-                s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7);
+                /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+                s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
 
 #if defined(DEVBUILD)
                 s7_pointer _curlet = s7_curlet(s7);
@@ -939,27 +942,27 @@ static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
                 s7_pointer _outlet = s7_outlet(s7, _curlet);
                 TRACE_S7_DUMP("fixing, outlet", _outlet);
 #endif
-                s7_pointer fixed = fix_sexpfile(s7, sexpfile);
+                s7_pointer fixed = fix_dunefile(s7, dunefile);
                 return fixed;
             }
-            else if (result == s7_make_symbol(s7, "sexp-eol-string-error")) {
-                /* const char *sexpfile = s7_port_filename(s7, g_sexp_inport); */
-                /* log_debug("fixing eol-string error for %s", sexpfile); */
+            else if (result == s7_make_symbol(s7, "dune-eol-string-error")) {
+                /* const char *dunefile = s7_port_filename(s7, g_dune_inport); */
+                /* log_debug("fixing eol-string error for %s", dunefile); */
                 /* TRACE_S7_DUMP("stanzas readed so far", g_stanzas); */
                 /* s7_gc_unprotect_at(s7, gc_stanzas); */
-                s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7);
-                /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-                /* s7_close_input_port(s7, g_sexp_inport); */
+                s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
+                /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+                /* s7_close_input_port(s7, g_dune_inport); */
 
                 /* s7_close_input_port(s7, _inport); */
 
-                s7_pointer fixed = fix_sexpfile(s7, sexpfile);
+                s7_pointer fixed = fix_dunefile(s7, dunefile);
                 return fixed;
             }
         }
-            /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-            /* s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7); */
-        TRACE_S7_DUMP("_g_sexp_read call/catch result", result);
+            /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+            /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
+        TRACE_S7_DUMP("_g_dune_read call/catch result", result);
         /* s7_flush_output_port(s7, s7_current_output_port(s7)); */
         return s7_reverse(s7, result);
 
@@ -968,56 +971,56 @@ static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
         src = s7_car(args);
         if (s7_is_input_port(s7, src)) {
             TRACE_LOG_DEBUG("SOURCE: input port", "");
-            /* return _sexp_read_port(s7, src); */
-            /* g_sexp_inport = src; */
+            /* return _dune_read_port(s7, src); */
+            /* g_dune_inport = src; */
 
         s7_pointer _curlet = s7_curlet(s7);
-        /* TRACE_S7_DUMP("g_sexp_read curlet", _curlet); */
+        /* TRACE_S7_DUMP("g_dune_read curlet", _curlet); */
 
-        s7_pointer _sexp_inport_sym = s7_make_symbol(s7, "-sexp-inport");
+        s7_pointer _dune_inport_sym = s7_make_symbol(s7, "-dune-inport");
 
         /* s7_pointer _inport = s7_current_input_port(s7); */
             s7_pointer _inport = src;
             /* s7_varlet(s7, s7_curlet(s7), */
-            /*           s7_make_symbol(s7, "-sexp-inport"), */
+            /*           s7_make_symbol(s7, "-dune-inport"), */
             /*           _inport); */
-            /* s7_pointer x7 =  s7_let_ref(s7, _curlet, _sexp_inport_sym); */
+            /* s7_pointer x7 =  s7_let_ref(s7, _curlet, _dune_inport_sym); */
             /* TRACE_S7_DUMP("x7", x7); */
-            if (s7_let_ref(s7, _curlet, _sexp_inport_sym)
+            if (s7_let_ref(s7, _curlet, _dune_inport_sym)
                 == s7_undefined(s7)) {
-                log_debug("adding -sexp-inport to curlet");
-                s7_varlet(s7, _curlet, _sexp_inport_sym, _inport);
+                log_debug("adding -dune-inport to curlet");
+                s7_varlet(s7, _curlet, _dune_inport_sym, _inport);
             } else {
-                log_debug("-sexp-inport in curlet");
-                s7_let_set(s7, _curlet, _sexp_inport_sym, _inport);
+                log_debug("-dune-inport in curlet");
+                s7_let_set(s7, _curlet, _dune_inport_sym, _inport);
             }
 
-            const char *sexpfile = s7_port_filename(s7, _inport);
-            if (sexpfile) {
+            const char *dunefile = s7_port_filename(s7, _inport);
+            if (dunefile) {
                 s7_varlet(s7, s7_curlet(s7),
-                          s7_make_symbol(s7, "-sexp-infile"),
-                          s7_make_string(s7, sexpfile));
+                          s7_make_symbol(s7, "-dune-infile"),
+                          s7_make_string(s7, dunefile));
             } else {
             }
             s7_varlet(s7, s7_curlet(s7),
-                      s7_make_symbol(s7, "-sexp-sexps"),
+                      s7_make_symbol(s7, "-dune-dunes"),
                       s7_nil(s7));
 
             result = s7_call_with_catch(s7,
                                         s7_t(s7),      /* tag */
-                                        // _sexp_read_thunk_s7
-                                        s7_name_to_value(s7, "-sexp-read-thunk"),
-                                        _sexp_read_catcher_s7
-                                        /* s7_name_to_value(s7, "-sexp-read-thunk-catcher") */
+                                        // _dune_read_thunk_s7
+                                        s7_name_to_value(s7, "-dune-read-thunk"),
+                                        _dune_read_catcher_s7
+                                        /* s7_name_to_value(s7, "-dune-read-thunk-catcher") */
                                         );
 
-            /* sexpfile = s7_port_filename(s7, _inport); */
-            if (result == s7_make_symbol(s7, "sexp-baddot-error")) {
-                log_debug("fixing baddot error for %s", sexpfile);
+            /* dunefile = s7_port_filename(s7, _inport); */
+            if (result == s7_make_symbol(s7, "dune-baddot-error")) {
+                log_debug("fixing baddot error for %s", dunefile);
                 TRACE_S7_DUMP("_inport", _inport);
                 /* s7_gc_unprotect_at(s7, gc_stanzas); */
-                /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-                s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7);
+                /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+                s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
 
 #if defined(DEVBUILD)
                 s7_pointer _curlet = s7_curlet(s7);
@@ -1025,27 +1028,27 @@ static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
                 s7_pointer _outlet = s7_outlet(s7, _curlet);
                 TRACE_S7_DUMP("fixing, outlet", _outlet);
 #endif
-                s7_pointer fixed = fix_sexpfile(s7, sexpfile);
+                s7_pointer fixed = fix_dunefile(s7, dunefile);
                 return fixed;
             }
-            else if (result == s7_make_symbol(s7, "sexp-eol-string-error")) {
-                /* const char *sexpfile = s7_port_filename(s7, g_sexp_inport); */
-                /* log_debug("fixing eol-string error for %s", sexpfile); */
+            else if (result == s7_make_symbol(s7, "dune-eol-string-error")) {
+                /* const char *dunefile = s7_port_filename(s7, g_dune_inport); */
+                /* log_debug("fixing eol-string error for %s", dunefile); */
                 /* TRACE_S7_DUMP("stanzas readed so far", g_stanzas); */
                 /* s7_gc_unprotect_at(s7, gc_stanzas); */
-                s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7);
-                /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-                /* s7_close_input_port(s7, g_sexp_inport); */
+                s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
+                /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+                /* s7_close_input_port(s7, g_dune_inport); */
 
                 /* s7_close_input_port(s7, _inport); */
 
-                s7_pointer fixed = fix_sexpfile(s7, sexpfile);
+                s7_pointer fixed = fix_dunefile(s7, dunefile);
                 return fixed;
             }
 
-            /* s7_gc_unprotect_at(s7, gc_sexp_inport); */
-            /* s7_gc_unprotect_at(s7, gc_sexp_read_catcher_s7); */
-            TRACE_S7_DUMP("_g_sexp_read call/catch result", result);
+            /* s7_gc_unprotect_at(s7, gc_dune_inport); */
+            /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
+            TRACE_S7_DUMP("_g_dune_read call/catch result", result);
             /* s7_flush_output_port(s7, s7_current_output_port(s7)); */
             return s7_reverse(s7, result);
 
@@ -1054,19 +1057,19 @@ static s7_pointer _g_sexp_read(s7_scheme *s7, s7_pointer args)
         }
         else if (s7_is_string(src)) {
             TRACE_LOG_DEBUG("SOURCE: string", "");
-            /* sexp_str = (char*)s7_string(src); */
+            /* dune_str = (char*)s7_string(src); */
         }
         else {
-            return(s7_wrong_type_error(s7, s7_make_string_wrapper_with_length(s7, "sexp:read", 10), 1, src, string_string));
+            return(s7_wrong_type_error(s7, s7_make_string_wrapper_with_length(s7, "dune:read", 10), 1, src, string_string));
         }
     }
     return s7_f(s7);
 }
 
 /* **************************************************************** */
-static s7_pointer _sexp_read_current_input_port(s7_scheme*s7)
+static s7_pointer _dune_read_current_input_port(s7_scheme*s7)
 {
-    TRACE_ENTRY(_sexp_read_current_input_port);
+    TRACE_ENTRY(_dune_read_current_input_port);
 
     s7_pointer _inport = s7_current_input_port(s7);
 
@@ -1080,50 +1083,50 @@ static s7_pointer _sexp_read_current_input_port(s7_scheme*s7)
         = s7_inlet(s7,
                    s7_list(s7, 2,
                            s7_cons(s7, _inport_sym, _inport),
-                           s7_cons(s7, _sexps_sym,  s7_nil(s7))));
+                           s7_cons(s7, _dune_sexps,  s7_nil(s7))));
 
-    const char *sexp = "(catch #t -sexp-read-thunk -sexp-read-catcher)";
+    const char *dune = "(catch #t -dune-read-thunk -dune-read-catcher)";
     // same as (with-let (inlet ...) (catch...)) ???
-    /* log_debug("evaluating c string %s", sexp); */
+    /* log_debug("evaluating c string %s", dune); */
     s7_pointer stanzas
-        = s7_eval_c_string_with_environment(s7, sexp, readlet);
+        = s7_eval_c_string_with_environment(s7, dune, readlet);
 
     TRACE_S7_DUMP("cip readed stanazas", stanzas);
 
     return stanzas;
-    /* return s7_make_string(s7,  "testing _sexp_read_current_input_port"); */
+    /* return s7_make_string(s7,  "testing _dune_read_current_input_port"); */
 }
 
-static s7_pointer _sexp_read_input_port(s7_scheme*s7, s7_pointer inport)
+static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer inport)
 {
-    TRACE_ENTRY(_sexp_read_input_port);
+    TRACE_ENTRY(_dune_read_input_port);
     (void)inport;
 
-    const char *sexpfile = s7_port_filename(s7, inport);
-    if (sexpfile == NULL) {
+    const char *dunefile = s7_port_filename(s7, inport);
+    if (dunefile == NULL) {
         log_debug("no filename for inport");
         s7_pointer _curlet = s7_curlet(s7);
         char *tmp = s7_object_to_c_string(s7, _curlet);
         log_debug("CURLET: %s", tmp);
-        s7_pointer sexpfile7 = s7_let_ref(s7, s7_curlet(s7),
-                               s7_make_symbol(s7, "-sexp-infile"));
-        TRACE_S7_DUMP("sexpfile7", sexpfile7);
-        sexpfile = s7_string(sexpfile7);
+        s7_pointer dunefile7 = s7_let_ref(s7, s7_curlet(s7),
+                               s7_make_symbol(s7, "-dune-infile"));
+        TRACE_S7_DUMP("dunefile7", dunefile7);
+        dunefile = s7_string(dunefile7);
     /* } else { */
-    /*     log_debug("inport filename: %s", sexpfile); */
+    /*     log_debug("inport filename: %s", dunefile); */
     }
 
     s7_pointer readlet
         = s7_inlet(s7,
                    s7_list(s7, 2,
                            s7_cons(s7, _inport_sym, inport),
-                           s7_cons(s7, _sexps_sym,  s7_nil(s7))));
+                           s7_cons(s7, _dune_sexps,  s7_nil(s7))));
 
-    const char *sexp = "(catch #t -sexp-read-thunk -sexp-read-catcher)";
+    const char *dune = "(catch #t -dune-read-thunk -dune-read-catcher)";
     // same as (with-let (inlet ...) (catch...)) ???
-    /* log_debug("evaluating c string %s", sexp); */
+    /* log_debug("evaluating c string %s", dune); */
     s7_pointer stanzas
-        = s7_eval_c_string_with_environment(s7, sexp, readlet);
+        = s7_eval_c_string_with_environment(s7, dune, readlet);
     /* log_debug("XXXXXXXXXXXXXXXX"); */
     /* TRACE_S7_DUMP("ip readed stanazas", stanzas); */
 
@@ -1131,15 +1134,15 @@ static s7_pointer _sexp_read_input_port(s7_scheme*s7, s7_pointer inport)
 }
 
 /* ********************************************************* */
-static s7_pointer _sexp_read_string(s7_scheme*s7, s7_pointer str)
+static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer str)
 {
-    TRACE_ENTRY(_sexp_read_string);
+    TRACE_ENTRY(_dune_read_string);
     TRACE_S7_DUMP("string", str);
 
     s7_pointer _inport = s7_open_input_string(s7, s7_string(str));
-    if (!s7_is_input_port(s7, _inport)) { // g_sexp_inport)) {
-        log_error("BAD INPUT PORT - _sexp_read_string %s", str);
-        s7_error(s7, s7_make_symbol(s7, "_sexp_read_string bad input port"),
+    if (!s7_is_input_port(s7, _inport)) { // g_dune_inport)) {
+        log_error("BAD INPUT PORT - _dune_read_string %s", str);
+        s7_error(s7, s7_make_symbol(s7, "_dune_read_string bad input port"),
                      s7_nil(s7));
     }
 
@@ -1147,13 +1150,13 @@ static s7_pointer _sexp_read_string(s7_scheme*s7, s7_pointer str)
         = s7_inlet(s7,
                    s7_list(s7, 2,
                            s7_cons(s7, _inport_sym, _inport),
-                           s7_cons(s7, _sexps_sym,  s7_nil(s7))));
+                           s7_cons(s7, _dune_sexps,  s7_nil(s7))));
 
-    const char *sexp = "(catch #t -sexp-read-thunk -sexp-read-catcher)";
+    const char *dune = "(catch #t -dune-read-thunk -dune-read-catcher)";
     // same as (with-let (inlet ...) (catch...)) ???
-    log_debug("evaluating c string %s", sexp);
+    log_debug("evaluating c string %s", dune);
     s7_pointer stanzas
-        = s7_eval_c_string_with_environment(s7, sexp, readlet);
+        = s7_eval_c_string_with_environment(s7, dune, readlet);
 
     TRACE_S7_DUMP("readed stanazas", stanzas);
 
@@ -1161,15 +1164,15 @@ static s7_pointer _sexp_read_string(s7_scheme*s7, s7_pointer str)
 }
 
 /*
-  (sexp:read) - read current-input-port
-  (sexp:read str) - read string str
-  (sexp:read p) - read port p
-  calls internal _g_sexp_read with local env
-  global *sexp:expand_includes*
+  (dune:read) - read current-input-port
+  (dune:read str) - read string str
+  (dune:read p) - read port p
+  calls internal _g_dune_read with local env
+  global *dune:expand_includes*
  */
-static s7_pointer g_sexp_read(s7_scheme *s7, s7_pointer args)
+static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 {
-    TRACE_ENTRY(g_sexp_read);
+    TRACE_ENTRY(g_dune_read);
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP("args", args);
 #if defined(DEVBUILD)
@@ -1187,26 +1190,26 @@ static s7_pointer g_sexp_read(s7_scheme *s7, s7_pointer args)
 
     if (args == s7_nil(s7)) {
         TRACE_LOG_DEBUG("SOURCE: current-input-port", "");
-        result = _sexp_read_current_input_port(s7);
+        result = _dune_read_current_input_port(s7);
         return result;
     } else {
         if (s7_list_length(s7, args) != 1) {
-            s7_wrong_number_of_args_error(s7, "sexp:read takes zero or 1 arg: ~S", args);
+            s7_wrong_number_of_args_error(s7, "dune:read takes zero or 1 arg: ~S", args);
         }
         s7_pointer src = s7_car(args);
         if (s7_is_input_port(s7, src)) {
             TRACE_LOG_DEBUG("SOURCE: input port", "");
-            result = _sexp_read_input_port(s7, src);
-            TRACE_S7_DUMP("_sexp_read_input_port res", result);
+            result = _dune_read_input_port(s7, src);
+            TRACE_S7_DUMP("_dune_read_input_port res", result);
             return result;
         }
         else if (s7_is_string(src)) {
             TRACE_LOG_DEBUG("SOURCE: string", "");
-            result = _sexp_read_string(s7, src);
+            result = _dune_read_string(s7, src);
             return result;
         }
         else {
-            return(s7_wrong_type_error(s7, s7_make_string_wrapper_with_length(s7, "sexp:read", 10), 1, src, string_string));
+            return(s7_wrong_type_error(s7, s7_make_string_wrapper_with_length(s7, "dune:read", 10), 1, src, string_string));
         }
     }
 
@@ -1214,33 +1217,33 @@ static s7_pointer g_sexp_read(s7_scheme *s7, s7_pointer args)
     // internal impl - must be exported to scheme (s7_define_function)
     // so it can be called with eval_c_string so that call_with_catch
     // will work.
-    s7_define_function(s7, "-g-sexp-read",
-                       _g_sexp_read,
+    s7_define_function(s7, "-g-dune-read",
+                       _g_dune_read,
                        0,
                        1, // string or port
                        false,
-                       "internal sexp:read");
+                       "internal dune:read");
 
     //TODO: to support recursion we need to use a local env rather
     //than global, to hold inport, stanzas, etc. so we alway use
-    //eval_c_string_with_environment to call sexp:read, and inlet
+    //eval_c_string_with_environment to call dune:read, and inlet
     // to create new local env.
     // but then what is the env for the catcher?
 
-    /* s7_int gc_sexp_read_s7 = s7_gc_protect(s7, _g_sexp_read_s7); */
-    /* s7_pointer result = _g_sexp_read(s7, args); */
-    /* s7_pointer result = s7_call(s7, _g_sexp_read_s7, args); */
+    /* s7_int gc_dune_read_s7 = s7_gc_protect(s7, _g_dune_read_s7); */
+    /* s7_pointer result = _g_dune_read(s7, args); */
+    /* s7_pointer result = s7_call(s7, _g_dune_read_s7, args); */
     s7_pointer env = s7_inlet(s7,
                               s7_list(s7, 1,
                                       s7_cons(s7,
                                               s7_make_symbol(s7, "xargs"),
                                               args)));
-    // WARNING: if the call to -g-sexp-read raises an error that gets
+    // WARNING: if the call to -g-dune-read raises an error that gets
     // handled by the catcher, then the continuation is whatever
     // called this routine (i.e. the c stack), NOT the assignment to
     // result below.
-    result = s7_eval_c_string_with_environment(s7, "(apply -g-sexp-read xargs)", env);
-    /* s7_gc_unprotect_at(s7, gc_sexp_read_s7); */
+    result = s7_eval_c_string_with_environment(s7, "(apply -g-dune-read xargs)", env);
+    /* s7_gc_unprotect_at(s7, gc_dune_read_s7); */
     TRACE_S7_DUMP("read result:", result);
     /* s7_gc_unprotect_at(s7, gc_stanzas); */
     return result;
@@ -1248,10 +1251,10 @@ static s7_pointer g_sexp_read(s7_scheme *s7, s7_pointer args)
 
 s7_pointer pl_tx, pl_xx, pl_xxs,pl_sx, pl_sxi, pl_ix, pl_iis, pl_isix, pl_bxs;
 
-s7_pointer libsexp_s7_init(s7_scheme *s7);
-s7_pointer libsexp_s7_init(s7_scheme *s7)
+s7_pointer libdune_s7_init(s7_scheme *s7);
+s7_pointer libdune_s7_init(s7_scheme *s7)
 {
-    TRACE_ENTRY(libsexp_s7_init);
+    TRACE_ENTRY(libdune_s7_init);
   s7_pointer cur_env;
   /* s7_pointer pl_tx, pl_xxs,pl_sx, pl_sxi, pl_ix, pl_iis, pl_isix, pl_bxs; */
   //  pl_xxsi, pl_ixs
@@ -1287,63 +1290,63 @@ s7_pointer libsexp_s7_init(s7_scheme *s7)
   cur_env = s7_inlet(s7, s7_nil(s7));
   s7_pointer old_shadow = s7_set_shadow_rootlet(s7, cur_env);
 
-  /* sexp_table_init(s7, cur_env); */
-  /* sexp_array_init(s7, cur_env); */
-  /* sexp_datetime_init(s7, cur_env); */
+  /* dune_table_init(s7, cur_env); */
+  /* dune_array_init(s7, cur_env); */
+  /* dune_datetime_init(s7, cur_env); */
 
   int64_t__symbol = s7_make_symbol(s7, "int64_t*");
-  /* sexp_datum_t__symbol = s7_make_symbol(s7, "sexp_datum_t*"); */
-  /* sexp_array_t__symbol = s7_make_symbol(s7, "sexp_array_t*"); */
-  /* sexp_table_t__symbol = s7_make_symbol(s7, "sexp_table_t*"); */
+  /* dune_datum_t__symbol = s7_make_symbol(s7, "dune_datum_t*"); */
+  /* dune_array_t__symbol = s7_make_symbol(s7, "dune_array_t*"); */
+  /* dune_table_t__symbol = s7_make_symbol(s7, "dune_table_t*"); */
   FILE__symbol = s7_make_symbol(s7, "FILE*");
 
-  _inport_sym = s7_make_symbol(s7, "-sexp-inport");
-  _infile_sym = s7_make_symbol(s7, "-sexp-infile");
-  _sexps_sym  = s7_make_symbol(s7, "-sexp-sexps");
+  _inport_sym = s7_make_symbol(s7, "-dune-inport");
+  _infile_sym = s7_make_symbol(s7, "-dune-infile");
+  _dune_sexps  = s7_make_symbol(s7, "-dune-sexps");
 
-  /* s7_define_constant(s7, "sexp:version", s7_make_string(s7, "1.0-beta")); */
+  /* s7_define_constant(s7, "dune:version", s7_make_string(s7, "1.0-beta")); */
 
   /* s7_define(s7, cur_env, */
-  /*           s7_make_symbol(s7, "sexp:free"), */
-  /*           s7_make_typed_function(s7, "sexp:free", */
-  /*                                  g_sexp_free, */
+  /*           s7_make_symbol(s7, "dune:free"), */
+  /*           s7_make_typed_function(s7, "dune:free", */
+  /*                                  g_dune_free, */
   /*                                  1, 0, false, */
-  /*                                  "(sexp:free t) free table t", pl_tx)); */
+  /*                                  "(dune:free t) free table t", pl_tx)); */
 
   /* public api */
-  s7_define_variable(s7, "*sexp:expand-includes*", s7_t(s7));
+  s7_define_variable(s7, "*dune:expand-includes*", s7_t(s7));
 
   s7_define(s7, cur_env,
-            s7_make_symbol(s7, "sexp:read"),
-            s7_make_typed_function(s7, "sexp:read",
-                                   g_sexp_read,
+            s7_make_symbol(s7, "dune:read"),
+            s7_make_typed_function(s7, "dune:read",
+                                   g_dune_read,
                                    0, // 0 args: read from current inport
                                    // (for with-input-from-string or -file)
                                    1, // optional: string or port
                                    false,
-                                   "(sexp:read) read sexpfile from current-input-port; (sexp:read src) read sexpfile from string or port",
+                                   "(dune:read) read dunefile from current-input-port; (dune:read src) read dunefile from string or port",
                                    NULL)); //sig
 
   /* private */
-  /* _sexp_read_thunk_s7 = s7_make_function(s7, "-sexp-read-thunk", */
-  /*                                        _sexp_read_thunk, */
+  /* _dune_read_thunk_s7 = s7_make_function(s7, "-dune-read-thunk", */
+  /*                                        _dune_read_thunk, */
   /*                                        0, 0, false, ""); */
-  /* _sexp_read_thunk_s7 = */
-  s7_define_function(s7, "-sexp-read-thunk",
-                     _sexp_read_thunk,
+  /* _dune_read_thunk_s7 = */
+  s7_define_function(s7, "-dune-read-thunk",
+                     _dune_read_thunk,
                      0, 0, false, "");
 
-  /* _sexp_read_catcher_s7 = */
-  s7_define_function(s7, "-sexp-read-catcher",
-                   _sexp_read_catcher,
+  /* _dune_read_catcher_s7 = */
+  s7_define_function(s7, "-dune-read-catcher",
+                   _dune_read_catcher,
                    2, // catcher must take 2
                    0, false,
                    "handle read error");
 
-    /* gc_sexp_read_catcher_s7 = s7_gc_protect(s7, _sexp_read_catcher_s7); */
+    /* gc_dune_read_catcher_s7 = s7_gc_protect(s7, _dune_read_catcher_s7); */
 
-  /* _sexp_read_catcher_s7 = s7_define_function(s7, "-sexp-read-thunk-catcher", */
-  /*                                                _sexp_read_catcher, */
+  /* _dune_read_catcher_s7 = s7_define_function(s7, "-dune-read-thunk-catcher", */
+  /*                                                _dune_read_catcher, */
   /*                                                2, // catcher must take 2 */
   /*                                                0, false, ""); */
 

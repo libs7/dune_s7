@@ -14,7 +14,7 @@ SRCS          = BASE_SRCS + [
     "//test:common.c", "//test:common.h",
 ]
 DEPS          = BASE_DEPS + [
-    "//src:sexp_s7",
+    "//src:dune_s7",
     "@gopt//:gopt",
     "@unity//src:unity",
     "@uthash//src:uthash",
