@@ -1,37 +1,34 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-load("//:BUILD.bzl", "BASE_SRCS",
-     "BASE_DEPS", "BASE_INCLUDE_PATHS",
-     "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
-     "TIMEOUT",
-     "LIBS7_VERSION",
-     "GOPT_VERSION",
-     "LIBLOG_CC_VERSION",
-     "UNITY_VERSION",
-     "UTHASH_VERSION")
+load("//config/cc:CONFIG.bzl",
+     "BASE_SRCS", "BASE_DEPS",
+     "BASE_COPTS", "BASE_INCLUDE_PATHS",
+     "BASE_DEFINES", "BASE_LINKOPTS")
 
 SRCS          = BASE_SRCS + [
-    "//test:common.c", "//test:common.h",
+    "//test:macros.h", "//src:trace_dev.h"
 ]
 DEPS          = BASE_DEPS + [
+    "@s7_tools//src:s7plugin_test_config",
     "//src:dune_s7",
-    "@gopt//:gopt",
+    "@gopt//src:gopt",
     "@unity//src:unity",
     "@uthash//src:uthash",
 ]
+
 INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
-    "-Iconfig",
     "-Isrc",
     "-Itest",
-    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
-    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
-    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+    "-I$(@gopt)/src",
+    "-I$(@unity)/src",
+    "-I$(@uthash)/src",
+    "-I$(GENDIR)/$(@s7_tools)/src",
 ]
+
 COPTS         = BASE_COPTS + INCLUDE_PATHS
 DEFINES       = BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
-
-TAGS = ["sexp", "readers", "read-errrors"]
+TOOLCHAINS = ["//:test_repo_paths"]
+TAGS = ["sexp", "readers"]
+TIMEOUT = "short"
 
 # make test files in subdirs accessible from this pkg
 # exports_files(glob(["case010/*"]))
@@ -50,6 +47,7 @@ cc_test(
     deps = DEPS,
     copts = COPTS,
     linkopts = LINKOPTS,
+    toolchains = TOOLCHAINS,
     timeout = TIMEOUT,
     tags = TAGS + ["readers"]
 )

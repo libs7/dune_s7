@@ -1,40 +1,72 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
-
-load("//:BUILD.bzl", "BASE_SRCS",
-     "BASE_DEPS", "BASE_INCLUDE_PATHS",
-     "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
-     "LIBS7_VERSION",
-     "GOPT_VERSION",
-     "LIBLOG_CC_VERSION",
-     "UNITY_VERSION",
-     "UTHASH_VERSION")
+load("//config/cc:CONFIG.bzl",
+     "BASE_SRCS", "BASE_DEPS",
+     "BASE_COPTS", "BASE_INCLUDE_PATHS",
+     "BASE_DEFINES", "BASE_LINKOPTS")
 
 SRCS          = BASE_SRCS + [
-    "//test:common.c", "//test:common.h",
-    # "@libs7//src:libs7.h"
+    "//test:macros.h", "//src:trace_dev.h"
 ]
-INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
-    "-Iconfig",
-    "-Isrc",
-    "-Itest",
-    "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
-    "-Iexternal/unity~{}/src".format(UNITY_VERSION),
-    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
-    # "-Iexternal/liblog_cc~{}/src".format(LIBLOG_CC_VERSION),
-]
-COPTS         = BASE_COPTS + INCLUDE_PATHS
 DEPS          = BASE_DEPS + [
+    "@s7_tools//src:s7plugin_test_config",
     "//src:dune_s7",
-    "@gopt//:gopt",
+    "@gopt//src:gopt",
     "@unity//src:unity",
     "@uthash//src:uthash",
-    # "@liblog_cc//src:logc",
 ]
+
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+    "-Isrc",
+    "-Itest",
+    "-I$(@gopt)/src",
+    "-I$(@unity)/src",
+    "-I$(@uthash)/src",
+    "-I$(GENDIR)/$(@s7_tools)/src",
+]
+
+COPTS         = BASE_COPTS + INCLUDE_PATHS
 DEFINES       = BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
-
-TAGS = ["sexp", "readers", "read-errrors"]
+TOOLCHAINS = ["//:test_repo_paths"]
 TIMEOUT = "short"
+TAGS = ["sexp", "readers", "read-errrors"]
+
+# load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# load("//:BUILD.bzl", "BASE_SRCS",
+#      "BASE_DEPS", "BASE_INCLUDE_PATHS",
+#      "BASE_COPTS", "BASE_DEFINES", "BASE_LINKOPTS",
+#      "LIBS7_VERSION",
+#      "GOPT_VERSION",
+#      "LIBLOGC_VERSION",
+#      "UNITY_VERSION",
+#      "UTHASH_VERSION")
+
+# SRCS          = BASE_SRCS + [
+#     "//test:common.c", "//test:common.h",
+#     # "@libs7//src:libs7.h"
+# ]
+# INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
+#     "-Iconfig",
+#     "-Isrc",
+#     "-Itest",
+#     "-Iexternal/gopt~{}/src".format(GOPT_VERSION),
+#     "-Iexternal/unity~{}/src".format(UNITY_VERSION),
+#     "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
+#     # "-Iexternal/liblogc~{}/src".format(LIBLOGC_VERSION),
+# ]
+# COPTS         = BASE_COPTS + INCLUDE_PATHS
+# DEPS          = BASE_DEPS + [
+#     "//src:dune_s7",
+#     "@gopt//src:gopt",
+#     "@unity//src:unity",
+#     "@uthash//src:uthash",
+#     # "@liblogc//src:logc",
+# ]
+# DEFINES       = BASE_DEFINES
+# LINKOPTS      = BASE_LINKOPTS
+
+# TAGS = ["sexp", "readers", "read-errrors"]
+# TIMEOUT = "short"
 
 # exports_files(["case010.dune"])
 
@@ -57,6 +89,7 @@ cc_test(
     deps = DEPS,
     copts = COPTS,
     linkopts = LINKOPTS,
+    toolchains = TOOLCHAINS,
     timeout = TIMEOUT,
     tags = TAGS
 )

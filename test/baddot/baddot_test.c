@@ -1,9 +1,9 @@
-#include "config.h"
+#include "gopt.h"
 #include "unity.h"
-#include "common.h"
 #include "libs7.h"
 
-s7_scheme *s7;
+#include "macros.h"
+#include "s7plugin_test_config.h"
 
 extern struct option options[];
 
@@ -26,6 +26,9 @@ s7_pointer data_fname7;
 s7_pointer expected_fname7;
 
 s7_pointer baddot_expected;
+
+bool verbose;
+bool debug;
 
 void setUp(void) {}
 
@@ -55,7 +58,7 @@ void with_input_from_file_test(void) {
                                    s7_make_symbol(s7, "datafile"),
                                    data_fname7)));
 
-    cmd = "(with-input-from-file datafile sexp:read)";
+    cmd = "(with-input-from-file datafile dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
@@ -74,7 +77,7 @@ void call_with_input_file_test(void) {
                                    s7_make_symbol(s7, "datafile"),
                                    data_fname7)));
 
-    cmd = "(call-with-input-file datafile sexp:read)";
+    cmd = "(call-with-input-file datafile dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
@@ -96,11 +99,11 @@ s7_pointer read_expected(char *fname) {
                                    s7_make_symbol(s7, "expected"),
                                    fname7)));
 
-    /* cmd = "(with-input-from-file datafile sexp:read)"; */
+    /* cmd = "(with-input-from-file datafile dune:read)"; */
     /* actual = s7_eval_c_string_with_environment(s7, cmd, readlet); */
     /* TRACE_S7_DUMP("actual", actual); */
 
-    // use read not sexp:read for expected
+    // use read not dune:read for expected
     cmd = "(with-input-from-file expected read)";
     return s7_eval_c_string_with_environment(s7, cmd, readlet);
 }
@@ -109,9 +112,9 @@ int main(int argc, char **argv)
 {
     s7 = initialize("interpolation", argc, argv);
 
-    libs7_load_clib(s7, "sexp");
+    libs7_load_clib(s7, "dune");
 
-    sexp_read = s7_name_to_value(s7, "sexp:read");
+    sexp_read = s7_name_to_value(s7, "dune:read");
     libs7_read = s7_name_to_value(s7, "read");
 
     with_input_from_file = s7_name_to_value(s7, "with-input-from-file");

@@ -1,36 +1,24 @@
-package(default_visibility = ["//visibility:public"])
+load("@makeheaders//src:RULES.bzl", "makeheaders")
 
 # dune:read produces an alist. corrects the following reader errors in
 # dune files: bad dot e.g. (run %{exe:test_clic.exe} .); end-of-line
 # string literals e.g. "\| this is a string
 
-load("//:BUILD.bzl",
+load("//config/cc:CONFIG.bzl",
      "BASE_SRCS", "BASE_DEPS",
      "BASE_COPTS", "BASE_INCLUDE_PATHS",
-     "BASE_DEFINES", "BASE_LINKOPTS",
-     "DUNE_S7_VERSION",
-     "LIBS7_VERSION",
-     "LIBLOG_CC_VERSION",
-     "UTHASH_VERSION")
+     "BASE_DEFINES", "BASE_LINKOPTS")
 
-SRCS = [] # BASE_SRCS + ["@libs7//src:s7.h"]
-INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
-    "-Iconfig",
-    # "-Iexternal/libs7~{}/src".format(LIBS7_VERSION),
-    # "-Iexternal/liblog_cc~{}/src".format(LIBLOG_CC_VERSION),
-    "-Iexternal/uthash~{}/src".format(UTHASH_VERSION),
-]
+SRCS = []
+DEPS = BASE_DEPS + ["@uthash//src:uthash"]
+INCLUDE_PATHS = BASE_INCLUDE_PATHS + ["-I$(@uthash)/src"]
 COPTS         = BASE_COPTS + INCLUDE_PATHS
-DEPS          = BASE_DEPS + [
-    "@uthash//src:uthash",
-    # "@liblog_cc//src:logc",
-    # "@libs7//src:s7",
-    # "@libs7//lib:utils",
-    # "@cjson//:cjson"
-]
-
 DEFINES       = BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
+
+TOOLCHAINS = ["//:repo_paths"]
+
+exports_files(["trace_dev.h"]) # for testing
 
 ##########
 cc_library(
@@ -39,27 +27,49 @@ cc_library(
     alwayslink = True,
     srcs = SRCS + [
         "dune_s7.c",
-        "dune_s7.h",
+        ":mkhdrs", # "dune_s7.h",
         # "error_handler_dune.c",
         # "error_handler_dune.h"
-    ] + select({
-        "@platforms//os:linux": [
-            # "//src/linux:strlcat.c",
-            # "//src/linux:strlcpy.c",
-            # "//src/linux:strnstr.c"
-        ],
-        "//conditions:default":   []
-    }),
-    copts = COPTS + [
-        # "-Iexternal/uthash~{}//src".format(UTHASH_VERSION),
-        # "-Ivendored/uthash",
-        # "-Iexternal/libs7/vendored/uthash",
     ],
-    deps = DEPS + [
-        # "@uthash//src:uthash",
-        # "//vendored/uthash",
-        # "//src:s7",
+    deps = DEPS,
+    copts = COPTS + [
+        "-I$(GENDIR)/$(@)/src"
     ],
     defines = DEFINES,
+    toolchains = TOOLCHAINS,
     visibility = ["//visibility:public"]
+)
+
+################################################################
+makeheaders(
+    name             = "mkhdrs",
+    hdrs_srcs        = ["dune_s7.c"],
+    additional_srcs  = select({
+        "//config/profile:dev?": [
+            ":ansi_colors.h",
+            ":trace_dev.h"
+        ],
+        "//conditions:default": [
+            ":trace_prod.h"
+        ]
+    })
+)
+
+makeheaders(
+    name             = "export_hdr",
+    out              = "dune_s7.h",
+    export_interface = True,
+    hdrs_srcs        = [
+        "dune_s7.c",
+        ":trace_prod.h"
+    ],
+    # additional_srcs  = select({
+    #     "//config/profile:dev?": [
+    #         ":ansi_colors.h",
+    #         ":trace_dev.h"
+    #     ],
+    #     "//conditions:default": [
+    #         ":trace_prod.h"
+    #     ]
+    # })
 )

@@ -69,7 +69,7 @@ void with_input_from_string_test(void) {
                                    test_sexp_str7)
                            ));
 
-    cmd = "(with-input-from-string sexp sexp:read)";
+    cmd = "(with-input-from-string sexp dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     /* TRACE_S7_DUMP("actual", actual); */
     flag = APPLY_1("alist?", actual);
@@ -88,7 +88,7 @@ void call_with_input_string_test(void) {
                                    test_sexp_str7)
                            ));
 
-    cmd = "(call-with-input-string sexp sexp:read)";
+    cmd = "(call-with-input-string sexp dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     TRACE_S7_DUMP("call-with-input-string", actual);
     res = APPLY_1("alist?", actual);
@@ -113,7 +113,7 @@ void with_input_from_file_test(void) {
                                    s7_make_symbol(s7, "fname"),
                                    fname7)));
 
-    cmd = "(with-input-from-file fname sexp:read)";
+    cmd = "(with-input-from-file fname dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     TRACE_S7_DUMP("actual", actual);
     TRACE_S7_DUMP("expected", test_sexp_expected);
@@ -139,11 +139,11 @@ void baddot_test(void) {
                                    s7_make_symbol(s7, "expected"),
                                    expected7)));
 
-    cmd = "(with-input-from-file datafile sexp:read)";
+    cmd = "(with-input-from-file datafile dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     TRACE_S7_DUMP("actual", actual);
 
-    // use read not sexp:read for expected
+    // use read not dune:read for expected
     cmd = "(with-input-from-file expected read)";
     expected = s7_eval_c_string_with_environment(s7, cmd, readlet);
     TRACE_S7_DUMP("expected", expected);
@@ -163,7 +163,7 @@ void call_with_input_file_test(void) {
                                    s7_make_symbol(s7, "fname"),
                                    fname7)));
 
-    cmd = "(call-with-input-file fname sexp:read)";
+    cmd = "(call-with-input-file fname dune:read)";
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     TRACE_S7_DUMP("call-with-input-file-test", actual);
 
@@ -171,7 +171,7 @@ void call_with_input_file_test(void) {
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
 
     /* cmd = "" */
-    /* "(call-with-input-file \"test/data/strings.sexp\" sexp:read)"; */
+    /* "(call-with-input-file \"test/data/strings.sexp\" dune:read)"; */
     /* t = s7_eval_c_string(s7, cmd); */
     /* TRACE_S7_DUMP("t", t); */
     /* actual = APPLY_1("sexp:map?", t); */
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 
     libs7_load_clib(s7, "sexp");
 
-    sexp_read = s7_name_to_value(s7, "sexp:read");
+    sexp_read = s7_name_to_value(s7, "dune:read");
     call_with_input_string = s7_name_to_value(s7, "call-with-input-string");
     with_input_from_file = s7_name_to_value(s7, "with-input-from-file");
     call_with_input_file = s7_name_to_value(s7, "call-with-input-file");

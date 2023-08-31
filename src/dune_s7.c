@@ -34,11 +34,15 @@
 #include <unistd.h>             /* write */
 #endif
 
-#include "config.h"
+#include "log.h"
 #include "utstring.h"
-#include "dune_s7.h"
 /* #include "error_handler_dune.h" */
-#include "s7.h"
+
+#if INTERFACE
+#include "libs7.h"
+#endif
+
+#include "dune_s7.h"
 
 //extern FIXME
 bool  verbose;
@@ -68,9 +72,9 @@ const char *errmsg;
 s7_pointer _dune_read_catcher_s7;
 s7_int gc_dune_read_catcher_s7 = -1;
 
-const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
+LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
-    TRACE_ENTRY(_dunefile_to_string);
+    TRACE_ENTRY;
 #if defined(TRACING)
     log_trace("dunefile: %s", dunefile_name);
                   //utstring_body(dunefile_name));
@@ -309,7 +313,7 @@ static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer s);
 
 s7_pointer fix_dunefile(s7_scheme *s7, const char *dunefile_name)
 {
-    TRACE_ENTRY(fix_dunefile);
+    TRACE_ENTRY;
     TRACE_LOG_DEBUG("dunefile: %s", dunefile_name);
 
     const char *dunestring = _dunefile_to_string(s7, dunefile_name);
@@ -471,7 +475,7 @@ void print_c_backtrace(void) // s7_scheme *s7)
 s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
 /* s7_pointer _dune_read_port(s7_scheme *s7, s7_pointer inport) */
 {
-    TRACE_ENTRY(_dune_read_thunk);
+    TRACE_ENTRY;
     (void)args;
 
     s7_pointer _curlet = s7_curlet(s7);
@@ -696,7 +700,7 @@ s7_pointer _dune_read_thunk_s7; /* initialized by init fn */
 /* call by s7_call_with_catch as body arg*/
 /* s7_pointer x_dune_read_thunk(s7_scheme *s7, s7_pointer args) { */
 /*     (void)args; */
-/*     TRACE_ENTRY(_dune_read_thunk); */
+/*     TRACE_ENTRY; */
 /* /\* #if defined(DEVBUILD) *\/ */
 /* /\*     print_c_backtrace(); *\/ */
 /* /\* #endif *\/ */
@@ -754,7 +758,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
 {
     (void)s7;
     (void)args;
-    TRACE_ENTRY(_dune_read_catcher);
+    TRACE_ENTRY;
     TRACE_S7_DUMP("args", args);
 
 #if defined(DEVBUILD)
@@ -868,7 +872,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 
     //FIXME: call read_dunefile(char *path)?
 
-    TRACE_ENTRY(_g_dune_read);
+    TRACE_ENTRY;
     s7_pointer src;
     TRACE_S7_DUMP("args", args);
 
@@ -1069,7 +1073,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 /* **************************************************************** */
 static s7_pointer _dune_read_current_input_port(s7_scheme*s7)
 {
-    TRACE_ENTRY(_dune_read_current_input_port);
+    TRACE_ENTRY;
 
     s7_pointer _inport = s7_current_input_port(s7);
 
@@ -1099,7 +1103,7 @@ static s7_pointer _dune_read_current_input_port(s7_scheme*s7)
 
 static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer inport)
 {
-    TRACE_ENTRY(_dune_read_input_port);
+    TRACE_ENTRY;
     (void)inport;
 
     const char *dunefile = s7_port_filename(s7, inport);
@@ -1136,7 +1140,7 @@ static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer inport)
 /* ********************************************************* */
 static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer str)
 {
-    TRACE_ENTRY(_dune_read_string);
+    TRACE_ENTRY;
     TRACE_S7_DUMP("string", str);
 
     s7_pointer _inport = s7_open_input_string(s7, s7_string(str));
@@ -1172,7 +1176,7 @@ static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer str)
  */
 static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 {
-    TRACE_ENTRY(g_dune_read);
+    TRACE_ENTRY;
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP("args", args);
 #if defined(DEVBUILD)
@@ -1251,10 +1255,10 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 
 s7_pointer pl_tx, pl_xx, pl_xxs,pl_sx, pl_sxi, pl_ix, pl_iis, pl_isix, pl_bxs;
 
-s7_pointer libdune_s7_init(s7_scheme *s7);
-s7_pointer libdune_s7_init(s7_scheme *s7)
+//s7_pointer libdune_s7_init(s7_scheme *s7);
+EXPORT s7_pointer libdune_s7_init(s7_scheme *s7)
 {
-    TRACE_ENTRY(libdune_s7_init);
+    TRACE_ENTRY;
   s7_pointer cur_env;
   /* s7_pointer pl_tx, pl_xxs,pl_sx, pl_sxi, pl_ix, pl_iis, pl_isix, pl_bxs; */
   //  pl_xxsi, pl_ixs

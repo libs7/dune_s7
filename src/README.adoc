@@ -1,6 +1,7 @@
-= libsexp
+= dune_s7
 
-Exports one function, `sexp:read`, that reads a file of sexps into a single alist.
+Exports one function, `dune:read`, that reads a dune file (file of
+sexps) into a single alist.
 
 Dune files support and include directive, e.g. `(include <path>)`.
 libsexp will expand such includes if global flag

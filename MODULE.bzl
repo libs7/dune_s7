@@ -1,0 +1,6 @@
+DUNE_S7_VERSION     = "0.1.0"
+LIBS7_VERSION       = "1.0.0"
+GOPT_VERSION        = "10.0.0"
+LIBLOGC_VERSION     = "1.0.0"
+UNITY_VERSION       = "2.5.2"
+UTHASH_VERSION      = "2.3.0"
