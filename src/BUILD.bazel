@@ -1,4 +1,5 @@
 load("@makeheaders//src:RULES.bzl", "makeheaders")
+load("@libs7//plugin:MACROS.bzl", "s7_plugin", "s7_library")
 
 # dune:read produces an alist. corrects the following reader errors in
 # dune files: bad dot e.g. (run %{exe:test_clic.exe} .); end-of-line
@@ -21,15 +22,11 @@ TOOLCHAINS = ["//:repo_paths"]
 exports_files(["trace_dev.h"]) # for testing
 
 ##########
-cc_library(
+s7_plugin(
     name  = "dune_s7",
-    linkstatic = True,
-    alwayslink = True,
     srcs = SRCS + [
         "dune_s7.c",
-        ":mkhdrs", # "dune_s7.h",
-        # "error_handler_dune.c",
-        # "error_handler_dune.h"
+        ":mkhdrs",
     ],
     deps = DEPS,
     copts = COPTS + [
@@ -63,13 +60,4 @@ makeheaders(
         "dune_s7.c",
         ":trace_prod.h"
     ],
-    # additional_srcs  = select({
-    #     "//config/profile:dev?": [
-    #         ":ansi_colors.h",
-    #         ":trace_dev.h"
-    #     ],
-    #     "//conditions:default": [
-    #         ":trace_prod.h"
-    #     ]
-    # })
 )
