@@ -1,37 +1,18 @@
-load("//config/cc:CONFIG.bzl",
-     "BASE_SRCS", "BASE_DEPS",
-     "BASE_COPTS", "BASE_INCLUDE_PATHS",
-     "BASE_DEFINES", "BASE_LINKOPTS")
+load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
+load("//test:CONFIG.bzl",
+     "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
+     "TEST_TOOLCHAINS",
+     "TEST_TIMEOUT", "TEST_TAGS")
 
-SRCS          = BASE_SRCS + [
-    "//test:macros.h", "//src:trace_dev.h"
-]
-DEPS          = BASE_DEPS + [
-    "@s7_tools//src:s7plugin_test_config",
-    "//src:dune_s7",
-    "@gopt//src:gopt",
-    "@unity//src:unity",
-    "@uthash//src:uthash",
-]
-
-INCLUDE_PATHS = BASE_INCLUDE_PATHS + [
-    "-Isrc",
-    "-Itest",
-    "-I$(@gopt)/src",
-    "-I$(@unity)/src",
-    "-I$(@uthash)/src",
-    "-I$(GENDIR)/$(@s7_tools)/src",
-]
-
+SRCS = TEST_SRCS
+DEPS = TEST_DEPS
+INCLUDE_PATHS = TEST_INCLUDE_PATHS
 COPTS         = BASE_COPTS + INCLUDE_PATHS
-DEFINES       = BASE_DEFINES
+DEFINES       = []
 LINKOPTS      = BASE_LINKOPTS
-TOOLCHAINS = ["//:test_repo_paths"]
-TAGS = ["sexp", "readers"]
-TIMEOUT = "short"
-
-# make test files in subdirs accessible from this pkg
-# exports_files(glob(["case010/*"]))
+TOOLCHAINS    = TEST_TOOLCHAINS
+TAGS          = TEST_TAGS + ["readers"]
+TIMEOUT       = TEST_TIMEOUT
 
 ################################################################
 cc_test(

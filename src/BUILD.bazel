@@ -14,7 +14,15 @@ SRCS = []
 DEPS = BASE_DEPS + ["@uthash//src:uthash"]
 INCLUDE_PATHS = BASE_INCLUDE_PATHS + ["-I$(@uthash)/src"]
 COPTS         = BASE_COPTS + INCLUDE_PATHS
-DEFINES       = BASE_DEFINES
+DEFINES       = select({
+    "//config/profile:dev?": ["DEVBUILD"],
+    "//conditions:default": []
+}) + select({
+    "//config/trace:trace?": ["TRACING"],
+    "//conditions:default": []
+})
+
+BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
 
 TOOLCHAINS = ["//:repo_paths"]
