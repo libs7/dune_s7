@@ -499,18 +499,18 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     // the original filename will be lost. But we need the dirname of
     // the original file because the include file is relative. So the
     // catcher puts -dune-infile into the curlet.
-    // No way to test if _inport is a string port, so we use brute force.
+    // WARNING: we only use this to read files, so no support for string ports
     const char *dunefile = s7_port_filename(s7, _inport); // g_dune_inport);
     if (dunefile == NULL) {
         /* log_debug("no filename for inport"); */
-        /* s7_pointer _curlet = s7_curlet(s7); */
+        s7_pointer _curlet = s7_curlet(s7);
         if (_curlet != s7_nil(s7)) {
             s7_pointer dunefile7 = s7_let_ref(s7, s7_curlet(s7), _infile_sym);
             TRACE_S7_DUMP("curlet -dune-infile", dunefile7);
             dunefile = s7_string(dunefile7);
         }
-    } else {
-        // log_debug("inport filename: %s", dunefile);
+    /* } else { */
+    /*     log_debug("inport filename: %s", dunefile); */
     }
     TRACE_LOG_DEBUG("inport file: %s", dunefile);
 
@@ -1108,18 +1108,17 @@ static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer inport)
 
     const char *dunefile = s7_port_filename(s7, inport);
     if (dunefile == NULL) {
-        log_debug("no filename for inport");
+        log_info("string port (inport w/o filename");
         s7_pointer _curlet = s7_curlet(s7);
         char *tmp = s7_object_to_c_string(s7, _curlet);
         log_debug("CURLET: %s", tmp);
         s7_pointer dunefile7 = s7_let_ref(s7, s7_curlet(s7),
                                s7_make_symbol(s7, "-dune-infile"));
-        TRACE_S7_DUMP("dunefile7", dunefile7);
+        /* TRACE_S7_DUMP("dunefile7", dunefile7); */
         dunefile = s7_string(dunefile7);
     /* } else { */
     /*     log_debug("inport filename: %s", dunefile); */
     }
-
     s7_pointer readlet
         = s7_inlet(s7,
                    s7_list(s7, 2,

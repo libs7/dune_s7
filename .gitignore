@@ -1,6 +1,9 @@
+.bazelignore
+.bazeliskrc
+.bazelversion
 .bazel
 bazel-*
-*.tgz
+*.gz
 
 # Prerequisites
 *.d

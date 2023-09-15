@@ -60,12 +60,14 @@ makeheaders(
     })
 )
 
-makeheaders(
-    name             = "export_hdr",
-    out              = "dune_s7.h",
-    export_interface = True,
-    hdrs_srcs        = [
-        "dune_s7.c",
-        ":trace_prod.h"
-    ],
-)
+# makeheaders(
+#     name             = "export_hdr",
+#     out              = "dune_s7.h",
+#     export_interface = True,
+#     hdrs_srcs        = [
+#         "dune_s7.c",
+#     ],
+#     additional_srcs = [
+#         ":trace_prod.h"
+#     ]
+# )
