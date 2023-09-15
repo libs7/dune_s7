@@ -20,9 +20,14 @@ cc_test(
     linkstatic = True,
     srcs = SRCS + ["file_readers_test.c"],
     local_defines = DEFINES,
-    data = ["case010.dune", "case010.expected"],
+    data = [
+        "case010.dune", "case010.expected",
+        "case020.dune", "case020.expected"
+    ],
     deps = DEPS,
-    copts = COPTS,
+    copts = COPTS + [
+        "-Wno-gnu-statement-expression"
+    ],
     linkopts = LINKOPTS,
     toolchains = TOOLCHAINS,
     timeout = TIMEOUT,

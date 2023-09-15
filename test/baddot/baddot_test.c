@@ -110,9 +110,9 @@ s7_pointer read_expected(char *fname) {
 
 int main(int argc, char **argv)
 {
-    s7 = initialize("interpolation", argc, argv);
+    s7 = s7_plugin_initialize("baddot", argc, argv);
 
-    libs7_load_clib(s7, "dune");
+    libs7_load_plugin(s7, "dune");
 
     sexp_read = s7_name_to_value(s7, "dune:read");
     libs7_read = s7_name_to_value(s7, "read");

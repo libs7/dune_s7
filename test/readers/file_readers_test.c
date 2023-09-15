@@ -14,7 +14,7 @@ s7_scheme *s7;
 extern struct option options[];
 
 // fn syms, initialized by main
-s7_pointer sexp_read;
+s7_pointer dune_read;
 s7_pointer libs7_read; //plain ol' read
 s7_pointer with_input_from_file;
 s7_pointer call_with_input_file;
@@ -43,7 +43,7 @@ void tearDown(void) {}
 void read_file_port(void) {
     s7_pointer inport = s7_open_input_file(s7, data_fname_str,  "r");
     TEST_ASSERT_TRUE(s7_is_input_port(s7, inport));
-    actual = s7_apply_function(s7, sexp_read, s7_list(s7, 1, inport));
+    actual = s7_apply_function(s7, dune_read, s7_list(s7, 1, inport));
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
     s7_close_input_port(s7, inport);
@@ -116,11 +116,11 @@ s7_pointer read_expected(char *fname) {
 
 int main(int argc, char **argv)
 {
-    s7 = initialize("interpolation", argc, argv);
+    s7 = s7_plugin_initialize("readers", argc, argv);
 
-    libs7_load_clib(s7, "dune");
+    libs7_load_plugin(s7, "dune");
 
-    sexp_read = s7_name_to_value(s7, "dune:read");
+    dune_read = s7_name_to_value(s7, "dune:read");
     libs7_read = s7_name_to_value(s7, "read");
 
     with_input_from_file = s7_name_to_value(s7, "with-input-from-file");
@@ -138,13 +138,13 @@ int main(int argc, char **argv)
     RUN_TEST(call_with_input_file_test);
     s7_gc_unprotect_at(s7, gc_expected);
 
-    /* data_fname_str = "test/readers/case020/dune"; */
-    /* readers_expected = read_expected("test/readers/case020/sexp.expected"); */
-    /* gc_expected = s7_gc_protect(s7, readers_expected); */
-    /* RUN_TEST(read_file_port); */
-    /* RUN_TEST(with_input_from_file_test); */
-    /* RUN_TEST(call_with_input_file_test); */
-    /* s7_gc_unprotect_at(s7, gc_expected); */
+    data_fname_str = "test/readers/case020.dune";
+    readers_expected = read_expected("test/readers/case020.expected");
+    gc_expected = s7_gc_protect(s7, readers_expected);
+    RUN_TEST(read_file_port);
+    RUN_TEST(with_input_from_file_test);
+    RUN_TEST(call_with_input_file_test);
+    s7_gc_unprotect_at(s7, gc_expected);
 
     /* data_fname_str = "test/readers/case030/dune"; */
     /* readers_expected = read_expected("test/readers/case030/sexp.expected"); */

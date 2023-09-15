@@ -1,0 +1,2 @@
+((foo "line with embedded
+newline") (eolstring " this is an eol string"))
