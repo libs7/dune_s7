@@ -478,6 +478,8 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     (void)args;
 
+    s7_gc_on(s7, false);
+
     s7_pointer _curlet = s7_curlet(s7);
 #if defined(DEVBUILD)
     log_trace("cwd: %s", getcwd(NULL, 0));
@@ -514,10 +516,12 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     }
     TRACE_LOG_DEBUG("inport file: %s", dunefile);
 
-    s7_pointer _dunes = NULL;
+    s7_pointer _dunes = s7_nil(s7);
     if (_curlet != s7_nil(s7)) {
-        _dunes = s7_let_ref(s7, _curlet, _dune_sexps);
-        TRACE_S7_DUMP("_dunes", _dunes);
+        s7_pointer x = s7_let_ref(s7, _curlet, _dune_sexps);
+        if (x != s7_nil(s7))
+            _dunes = s7_cons(s7, x, _dunes);
+        TRACE_S7_DUMP("00 _dunes", _dunes);
     }
 
     /* g_stanzas = s7_list(s7, 0); // s7_nil(s7)); */
@@ -549,6 +553,8 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
         log_trace("reading next stanza");
 #endif
 
+        TRACE_S7_DUMP("_dunes before read", _dunes);
+
         /* s7_show_stack(s7); */
         /* print_c_backtrace(); */
         s7_pointer stanza = s7_read(s7, _inport); // g_dune_inport);
@@ -559,6 +565,8 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
 
 /* #if defined(DEVBUILD) */
         TRACE_S7_DUMP("Readed stanza", stanza);
+        TRACE_S7_DUMP("_dunes after read", _dunes);
+
 /* #endif */
         /* s7_show_stack(s7); */
         /* print_c_backtrace(); */
@@ -643,7 +651,9 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                 /*                     ); */
 
                     /* _dunes = s7_append(s7, expanded, _dunes); */
+                    TRACE_S7_DUMP("A_dunes before", _dunes);
                     _dunes = s7_append(s7, s7_reverse(s7, expanded), _dunes);
+                    TRACE_S7_DUMP("A_dunes after", _dunes);
                     /* const char *x = s7_object_to_c_string(s7, _dunes); */
                     /* log_debug("_dunes w/inc: %s", x); */
                     /* free((void*)x); */
@@ -654,11 +664,14 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                     /*                                  stanza)); */
                     /* g_stanzas = s7_cons(s7, cmt, g_stanzas); */
                 } else {
+                    TRACE_S7_DUMP("X_dunes before", _dunes);
                     _dunes = s7_cons(s7, stanza, _dunes);
+                    TRACE_S7_DUMP("X_dunes after", _dunes);
                 }
             } else {
+                TRACE_S7_DUMP("_dunes BEFORE", _dunes);
                 _dunes = s7_cons(s7, stanza, _dunes);
-                TRACE_S7_DUMP("_dunes", _dunes);
+                TRACE_S7_DUMP("_dunes AFTER", _dunes);
 
                 /* g_stanzas = s7_cons(s7, stanza, g_stanzas); */
                 /* TRACE_S7_DUMP("g_stanzas", g_stanzas); */
@@ -684,8 +697,10 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     // g_dune_inport must be closed by caller (e.g. with-input-from-file)
 
 #if defined(DEVBUILD)
-    log_debug("finished reading dunefile");
+    log_debug("finished reading dunefile: %s", dunefile);
 #endif
+
+    s7_gc_on(s7, true);
 
     /* return _dunes; */
     return s7_reverse(s7, _dunes);
