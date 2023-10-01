@@ -608,7 +608,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                 TRACE_LOG_DEBUG("dunefile: %s", dunefile);
                 char *tmp = strdup(dunefile);
                 const char *dir = dirname(tmp);
-                free((void*)tmp);
+                TRACE_LOG_DEBUG("dir: %s", dir);
 
                 UT_string *dunepath;
                 utstring_new(dunepath);
@@ -620,7 +620,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                                 //dirname(path),
                                 dir,
                                 tostr);
-
+                TRACE_LOG_DEBUG("dunepath: %s", utstring_body(dunepath));
                 /* g_dunefile_port = dunefile_port; */
                 /* /\* LOG_S7_DEBUG("nested", nested); *\/ */
                 /* /\* LOG_S7_DEBUG("stanzas", stanzas); *\/ */
@@ -642,6 +642,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                            "(with-input-from-file datafile dune:read)",
                                                             env);
                     TRACE_LOG_DEBUG("expansion completed", "");
+
                 /* s7_pointer expanded = s7_call_with_catch(s7, */
                 /*                     s7_t(s7),      /\* tag *\/ */
                 /*                     // _dune_read_thunk_s7 */
@@ -668,6 +669,9 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                     _dunes = s7_cons(s7, stanza, _dunes);
                     TRACE_S7_DUMP("X_dunes after", _dunes);
                 }
+                free((void*)tmp);
+                utstring_free(dunepath);
+
             } else {
                 TRACE_S7_DUMP("_dunes BEFORE", _dunes);
                 _dunes = s7_cons(s7, stanza, _dunes);
