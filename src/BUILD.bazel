@@ -27,7 +27,7 @@ LINKOPTS      = BASE_LINKOPTS
 
 TOOLCHAINS = ["//:repo_paths"]
 
-exports_files(["trace_dev.h"]) # for testing
+exports_files(["trace_dev.h", "trace_prod.h"]) # for testing
 
 ##########
 s7_plugin(

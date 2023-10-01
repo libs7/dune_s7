@@ -2,6 +2,7 @@
 #define _MACROS_H
 
 #include "trace_dev.h"
+/* #include "trace_prod.h" */
 #include "gopt.h"
 #include "libs7.h"
 

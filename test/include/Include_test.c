@@ -40,13 +40,13 @@ void read_file_port(void) {
     s7_pointer inport = s7_open_input_file(s7, data_fname_str,  "r");
     TEST_ASSERT_TRUE(s7_is_input_port(s7, inport));
     actual = s7_apply_function(s7, sexp_read, s7_list(s7, 1, inport));
-    TRACE_S7_DUMP("actual", actual);
+    /* TRACE_S7_DUMP("actual", actual); */
 
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
     s7_close_input_port(s7, inport);
 
-    TRACE_S7_DUMP("expected", include_expected);
+    /* TRACE_S7_DUMP("expected", include_expected); */
 
     flag = APPLY_2("equal?", actual, include_expected);
     TEST_ASSERT_TRUE_MESSAGE(s7_boolean(s7, flag), data_fname_str);
@@ -252,7 +252,12 @@ int main(int argc, char **argv)
     RUN_TEST(call_with_input_file_test);
     s7_gc_unprotect_at(s7, gc_expected);
 
-    s7_quit(s7);
-    s7_free(s7);
+    s7_flush_output_port(s7, s7_current_output_port(s7));
+    s7_flush_output_port(s7, s7_current_error_port(s7));
+    fflush(NULL);
+
+    s7_quit(s7);                /* exit interpreter */
+    /* s7_free(s7); */
+
     return UNITY_END();
 }
