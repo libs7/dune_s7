@@ -14,8 +14,6 @@ bazel_dep(name = "rules_cc",     version = "0.0.9")
 bazel_dep(name = "cc_config",    version = "1.1.0")
 bazel_dep(name = "liblogc",      version = "1.0.0")
 bazel_dep(name = "libs7",        version = "1.0.1")
-local_path_override(module_name = "libs7",
-                    path = "../libs7")
 bazel_dep(name = "makeheaders",  version = "1.0.2")
 bazel_dep(name = "uthash",       version = "2.3.0")
 
