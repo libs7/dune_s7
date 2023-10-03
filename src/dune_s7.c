@@ -29,7 +29,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
 #include <execinfo.h>           /* backtrace */
 #include <unistd.h>             /* write */
 #endif
@@ -75,7 +75,7 @@ s7_int gc_dune_read_catcher_s7 = -1;
 LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
     TRACE_ENTRY;
-#if defined(TRACING)
+#if defined(DEBUG_fastbuild)
     log_trace("dunefile: %s", dunefile_name);
                   //utstring_body(dunefile_name));
     s7_pointer cip = s7_current_input_port(s7);
@@ -92,7 +92,7 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 /*     memset(outbuf, '\0', DUNE_BUFSZ); */
 
     size_t file_size;
-    char *inbuf;
+    char *inbuf = NULL;
     struct stat stbuf;
     int fd;
     FILE *instream = NULL;
@@ -101,8 +101,8 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     fd = open(dunefile_name, O_RDONLY);
     if (fd == -1) {
         /* Handle error */
-        log_error("fd open error");
-    log_trace("cwd: %s", getcwd(NULL, 0));
+        log_error("fd open error: %s", dunefile_name);
+        log_trace("cwd: %s", getcwd(NULL, 0));
         s7_error(s7, s7_make_symbol(s7, "fd-open-error"),
                  s7_list(s7, 3,
                          s7_make_string(s7, "fd open error: ~A, ~A"),
@@ -117,7 +117,7 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     log_debug("filesize: %d", file_size);
 #endif
 
@@ -141,7 +141,7 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
         log_debug("fdopened %s",
                   dunefile_name);
         /* utstring_body(dunefile_name)); */
@@ -150,8 +150,9 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 
     // now read the entire file
     size_t read_ct = fread(inbuf, 1, file_size, instream);
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     log_debug("read_ct: %d", read_ct);
+    log_debug("readed txt: %s", (char*)inbuf);
 #endif
     if (read_ct != file_size) {
         if (ferror(instream) != 0) {
@@ -181,10 +182,26 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
         close(fd);
         fclose(instream);
     }
+
     inbuf[read_ct + 1] = '\0';
-    uint64_t outFileSizeCounter = file_size * 2;
-    char *outbuf = calloc(outFileSizeCounter, sizeof(char));
-    /* memset(outbuf, '\0', fileSize); */
+    // allocate twice (?) what we need
+    uint64_t outFileSizeCounter = file_size * 3;
+    log_debug("RRRRRRRRRRRRRRRR %d", outFileSizeCounter);
+    errno = 0;
+    fflush(NULL);
+    static char outbuf[320000];
+    /* char *outbuf = NULL; */
+    /* outbuf = (char*)malloc(outFileSizeCounter); */
+    /* outbuf = (char*)calloc(outFileSizeCounter, sizeof(char)); */
+    /* fprintf(stderr, "XXXXXXXXXXXXXXXX"); */
+    /* fflush(NULL); */
+    /* if (outbuf == NULL) { */
+    /*     log_error("calloc fail: %s", strerror(errno)); */
+    /*     goto cleanup; */
+    /* } else { */
+    /*     log_info("calloc success"); */
+    /* } */
+    memset((char*)outbuf, '\0', outFileSizeCounter);
 
     // FIXME: loop over the entire inbuf char by char, testing for
     // . or "\|
@@ -247,7 +264,7 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
         }
         *outptr++ = *inptr++;
     }
-
+    log_debug("SSSSSSSSSSSSSSSS %d", strlen((char*)outbuf));
 /*     inptr = (char*)inbuf; */
 /*     while (true) { */
 /*         cursor = strstr(inptr, ".)"); */
@@ -255,21 +272,21 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 /* /\* https://stackoverflow.com/questions/54592366/replacing-one-character-in-a-string-with-multiple-characters-in-c *\/ */
 
 /*         if (cursor == NULL) { */
-/* /\* #if defined(DEVBUILD) *\/ */
+/* /\* #if defined(DEBUG_fastbuild) *\/ */
 /* /\*             if (mibl_debug) log_debug("remainder: '%s'", inptr); *\/ */
 /* /\* #endif *\/ */
 /*             size_t ct = strlcpy(outptr, (const char*)inptr, file_size); // strlen(outptr)); */
 /*             (void)ct;           /\* prevent -Wunused-variable *\/ */
-/* /\* #if defined(DEVBUILD) *\/ */
+/* /\* #if defined(DEBUG_fastbuild) *\/ */
 /* /\*             if (mibl_debug) log_debug("concatenated: '%s'", outptr); *\/ */
 /* /\* #endif *\/ */
 /*             break; */
 /*         } else { */
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*             log_error("FOUND and fixing \".)\" at pos: %d", cursor - inbuf); */
 /* #endif */
 /*             size_t ct = strlcpy(outptr, (const char*)inptr, cursor - inptr); */
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*             log_debug("copied %d chars", ct); */
 /*             /\* log_debug("to buf: '%s'", outptr); *\/ */
 /* #endif */
@@ -295,8 +312,13 @@ LOCAL const char *_dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 /*             } */
 /*         } */
 /*     } */
-    free(inbuf);
-    return outbuf;
+    /* free(inbuf); */
+    log_debug("AAAAAAAAAAAAAAAA9 %s", (char*)outbuf);
+
+    /* char *tmp = strndup((char*) outbuf, strlen((char*)outbuf)); */
+    /* log_debug("x AAAAAAAAAAAAAAAA9"); */
+    /* free(outbuf); */
+    return (char*)outbuf;
 
 cleanup:
     //FIXME
@@ -305,16 +327,19 @@ cleanup:
         fclose(instream);
         close(fd);
     }
+    if (inbuf != NULL) free(inbuf);
+    /* if (outbuf != NULL) free(outbuf); */
     return NULL;
 }
 
 static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer port);
 static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer s);
 
-s7_pointer fix_dunefile(s7_scheme *s7, const char *dunefile_name)
+s7_pointer _fix_dunefile(s7_scheme *s7, const char *dunefile_name)
 {
     TRACE_ENTRY;
     TRACE_LOG_DEBUG("dunefile: %s", dunefile_name);
+    log_error("FFFFFFFFFFFFFFFFF");
 
     const char *dunestring = _dunefile_to_string(s7, dunefile_name);
 
@@ -355,7 +380,8 @@ s7_pointer fix_dunefile(s7_scheme *s7, const char *dunefile_name)
     /* result = _dune_read_string(s7, s7_make_string(s7,dunestring)); */
 
     TRACE_S7_DUMP("fixed stanzas", result);
-    free((void*)dunestring);
+    s7_close_input_port(s7, _inport);
+    /* free((void*)dunestring); */
     return result;
 
     /* **************************************************************** */
@@ -415,12 +441,12 @@ s7_pointer fix_dunefile(s7_scheme *s7, const char *dunefile_name)
     /* close_error_config(); */
 
     /* leave error config as-is */
-    free((void*)dunestring);
+    /* free((void*)dunestring); */
     /* return s7_reverse(s7, stanzas); */
     return stanzas;
 }
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
 /* https://stackoverflow.com/questions/6934659/how-to-make-backtrace-backtrace-symbols-print-the-function-names */
 static void full_write(int fd, const char *buf, size_t len)
 {
@@ -478,14 +504,12 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     (void)args;
 
-    s7_gc_on(s7, false);
-
     s7_pointer _curlet = s7_curlet(s7);
-#if defined(DEVBUILD)
-    log_trace("cwd: %s", getcwd(NULL, 0));
-    char *tmp = s7_object_to_c_string(s7, _curlet);
-    log_debug("CURLET: %s", tmp);
-    free(tmp);
+#if defined(DEBUG_fastbuild)
+    /* log_trace("cwd: %s", getcwd(NULL, 0)); */
+    /* char *tmp = s7_object_to_c_string(s7, _curlet); */
+    /* log_debug("CURLET: %s", tmp); */
+    /* free(tmp); */
 #endif
     /* TRACE_S7_DUMP("outlet", s7_outlet(s7, s7_curlet(s7))); */
 
@@ -532,7 +556,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* gc_dune_inport = s7_gc_protect(s7, g_dunefile_port); */
     /* gc_dune_inport = s7_gc_protect(s7, g_dune_inport); */
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     log_debug("reading stanzas");
     // from dunefile: %s", dunefile);
 #endif
@@ -543,13 +567,16 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* init_error_handling(); */
 
     /* s7_show_stack(s7); */
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
+    s7_gc_on(s7, false);
+
     /* repeat until all objects read */
+    s7_pointer stanza;
     while(true) {
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
         log_trace("reading next stanza");
 #endif
 
@@ -557,13 +584,14 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
 
         /* s7_show_stack(s7); */
         /* print_c_backtrace(); */
-        s7_pointer stanza = s7_read(s7, _inport); // g_dune_inport);
+        stanza = s7_read(s7, _inport); // g_dune_inport);
+        log_debug("ZZZZZZZZZZZZZZZZ");
         if (stanza == s7_eof_object(s7)) {
             /* log_debug("EOF"); */
             break;
         }
 
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
         TRACE_S7_DUMP("Readed stanza", stanza);
         TRACE_S7_DUMP("_dunes after read", _dunes);
 
@@ -580,7 +608,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
         /* s7_gc_unprotect_at(s7, gc_dune_inport); */
 
         if (stanza == s7_eof_object(s7)) {
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
             log_trace("readed eof");
 #endif
             break;
@@ -669,7 +697,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
                     _dunes = s7_cons(s7, stanza, _dunes);
                     TRACE_S7_DUMP("X_dunes after", _dunes);
                 }
-                free((void*)tmp);
+                /* free((void*)tmp); */
                 utstring_free(dunepath);
 
             } else {
@@ -688,7 +716,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
         } else {
             /* stanza not a pair - automatically means corrupt dunefile? */
             log_error("corrupt dune file? %s\n",
-                      // utstring_body(dunefile_name)
+                      /* utstring_body(dunefile_name) */
                       "FIXME"
                       );
             s7_error(s7, s7_make_symbol(s7, "corrupt-dune-file"),
@@ -700,7 +728,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* s7_close_input_port(s7, inport); */
     // g_dune_inport must be closed by caller (e.g. with-input-from-file)
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     log_debug("finished reading dunefile: %s", dunefile);
 #endif
 
@@ -720,7 +748,7 @@ s7_pointer _dune_read_thunk_s7; /* initialized by init fn */
 /* s7_pointer x_dune_read_thunk(s7_scheme *s7, s7_pointer args) { */
 /*     (void)args; */
 /*     TRACE_ENTRY; */
-/* /\* #if defined(DEVBUILD) *\/ */
+/* /\* #if defined(DEBUG_fastbuild) *\/ */
 /* /\*     print_c_backtrace(); *\/ */
 /* /\* #endif *\/ */
 /*     /\* log_debug("reading dunefile: %s", g_dunefile); *\/ */
@@ -743,25 +771,25 @@ void _log_read_error(s7_scheme *s7)
                      s7_cons(s7,
                              s7_make_symbol(s7, "error-data"),
                              s7_nil(s7)));
-    s = s7_object_to_c_string(s7, edatum);
-    log_warn("error-data: %s", s);
-    free((void*)s);
+    /* s = s7_object_to_c_string(s7, edatum); */
+    /* log_warn("error-data: %s", s); */
+    /* free((void*)s); */
 
     edatum = s7_call(s7, ow_let,
                      s7_cons(s7,
                              s7_make_symbol(s7, "error-code"),
                              s7_nil(s7)));
-    s = s7_object_to_c_string(s7, edatum);
-    log_warn("error-code: %s", s);
-    free((void*)s);
+    /* s = s7_object_to_c_string(s7, edatum); */
+    /* log_warn("error-code: %s", s); */
+    /* free((void*)s); */
 
     edatum = s7_call(s7, ow_let,
                      s7_cons(s7,
                              s7_make_symbol(s7, "error-file"),
                              s7_nil(s7)));
-    s = s7_object_to_c_string(s7, edatum);
-    log_warn("error-file: %s", s);
-    free((void*)s);
+    /* s = s7_object_to_c_string(s7, edatum); */
+    /* log_warn("error-file: %s", s); */
+    /* free((void*)s); */
 }
 
 // s7_pointer _dune_read_catcher_s7; /* initialized by init fn */
@@ -780,7 +808,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     TRACE_S7_DUMP("args", args);
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     s7_pointer owlet7 = s7_eval_c_string(s7,  "(owlet)");
     const char *owlet = s7_object_to_c_string(s7, owlet7);
     log_debug("owlet: %s", owlet);
@@ -803,9 +831,9 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
         s7_error(s7, s7_make_symbol(s7, "io-error"), errdata7);
                  /* s7_cons(s7, errdata7, s7_nil(s7))); */
     }
-    free((void*)errtype);
+    /* free((void*)errtype); */
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     // WARNING: (curlet) may be empty
     s7_pointer _curlet = s7_curlet(s7);
     TRACE_S7_DUMP("catch curlet", _curlet);
@@ -840,10 +868,10 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
         free((void*)e);
         e7 = s7_eval_c_string(s7,  "((owlet) 'error-line)");
         e = s7_object_to_c_string(s7, e7);
-        log_warn("error-line: %s", e);
-        free((void*)e);
+        log_warn("Error-line: %s", e);
+        /* free((void*)e); */
     }
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
@@ -857,14 +885,18 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
     // or the owlet (key 'error-data).
     /* s7_pointer err_msg = s7_cadr(args); */
 
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*     TRACE_S7_DUMP("s7_read_catcher err sym", err_sym); */
 /*     TRACE_S7_DUMP("s7_read_catcher err msg", err_msg); */
 /* #endif */
 
     /* _log_read_error(s7); */
 
-    s7_pointer fixed = fix_dunefile(s7, errfile);
+    log_debug("AAAAAAAAAAAAAAAA0");
+    s7_pointer fixed = _fix_dunefile(s7, errfile);
+    log_debug("AAAAAAAAAAAAAAAA1");
+
+    TRACE_EXIT;
     return fixed;
 
     /* const char *s = s7_object_to_c_string(s7, err_msg); */
@@ -897,7 +929,9 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 
     TRACE_S7_DUMP("curlet", s7_curlet(s7));
 
-/* #if defined(DEVBUILD) */
+    s7_gc_on(s7, false);
+
+/* #if defined(DEBUG_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
@@ -938,7 +972,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                   s7_make_symbol(s7, "-dune-dunes"),
                   s7_nil(s7));
 
-/* #if defined(DEVBUILD) */
+/* #if defined(DEBUG_fastbuild) */
 /*         const char *dunefile = s7_port_filename(s7, g_dune_inport); */
 /*         log_debug("reading dunefile: %s", dunefile); */
 /* #endif */
@@ -957,15 +991,16 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                 TRACE_S7_DUMP("_inport", _inport);
                 /* s7_gc_unprotect_at(s7, gc_stanzas); */
                 /* s7_gc_unprotect_at(s7, gc_dune_inport); */
-                s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
+                /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
 
-#if defined(DEVBUILD)
-                s7_pointer _curlet = s7_curlet(s7);
-                TRACE_S7_DUMP("fixing, curlet", _curlet);
-                s7_pointer _outlet = s7_outlet(s7, _curlet);
-                TRACE_S7_DUMP("fixing, outlet", _outlet);
+#if defined(DEBUG_fastbuild)
+                /* s7_pointer _curlet = s7_curlet(s7); */
+                /* TRACE_S7_DUMP("fixing, curlet", _curlet); */
+                /* s7_pointer _outlet = s7_outlet(s7, _curlet); */
+                /* TRACE_S7_DUMP("fixing, outlet", _outlet); */
 #endif
-                s7_pointer fixed = fix_dunefile(s7, dunefile);
+                s7_pointer fixed = _fix_dunefile(s7, dunefile);
+                s7_gc_on(s7, true);
                 return fixed;
             }
             else if (result == s7_make_symbol(s7, "dune-eol-string-error")) {
@@ -979,7 +1014,9 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 
                 /* s7_close_input_port(s7, _inport); */
 
-                s7_pointer fixed = fix_dunefile(s7, dunefile);
+                s7_pointer fixed = _fix_dunefile(s7, dunefile);
+                s7_gc_on(s7, true);
+
                 return fixed;
             }
         }
@@ -987,6 +1024,8 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
             /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
         TRACE_S7_DUMP("_g_dune_read call/catch result", result);
         /* s7_flush_output_port(s7, s7_current_output_port(s7)); */
+        s7_gc_on(s7, true);
+
         return s7_reverse(s7, result);
 
     } else {
@@ -1045,13 +1084,14 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                 /* s7_gc_unprotect_at(s7, gc_dune_inport); */
                 s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
 
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
                 s7_pointer _curlet = s7_curlet(s7);
                 TRACE_S7_DUMP("fixing, curlet", _curlet);
                 s7_pointer _outlet = s7_outlet(s7, _curlet);
                 TRACE_S7_DUMP("fixing, outlet", _outlet);
 #endif
-                s7_pointer fixed = fix_dunefile(s7, dunefile);
+                s7_pointer fixed = _fix_dunefile(s7, dunefile);
+                s7_gc_on(s7, true);
                 return fixed;
             }
             else if (result == s7_make_symbol(s7, "dune-eol-string-error")) {
@@ -1065,7 +1105,8 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 
                 /* s7_close_input_port(s7, _inport); */
 
-                s7_pointer fixed = fix_dunefile(s7, dunefile);
+                s7_pointer fixed = _fix_dunefile(s7, dunefile);
+                s7_gc_on(s7, true);
                 return fixed;
             }
 
@@ -1073,6 +1114,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
             /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
             TRACE_S7_DUMP("_g_dune_read call/catch result", result);
             /* s7_flush_output_port(s7, s7_current_output_port(s7)); */
+            s7_gc_on(s7, true);
             return s7_reverse(s7, result);
 
             /* TRACE_LOG_DEBUG("read_thunk result", result); */
@@ -1083,9 +1125,12 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
             /* dune_str = (char*)s7_string(src); */
         }
         else {
+            s7_gc_on(s7, true);
             return(s7_wrong_type_error(s7, s7_make_string_wrapper_with_length(s7, "dune:read", 10), 1, src, string_string));
         }
     }
+    s7_gc_on(s7, true);
+
     return s7_f(s7);
 }
 
@@ -1197,7 +1242,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP("args", args);
-#if defined(DEVBUILD)
+#if defined(DEBUG_fastbuild)
     s7_pointer _curlet = s7_curlet(s7);
     char *tmp = s7_object_to_c_string(s7, _curlet);
     log_debug("CURLET: %s", tmp);
@@ -1206,7 +1251,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 
     s7_pointer result;
 
-    /* #if defined(DEVBUILD) */
+    /* #if defined(DEBUG_fastbuild) */
     /*     print_c_backtrace(); */
     /* #endif */
 

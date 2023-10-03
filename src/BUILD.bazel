@@ -20,7 +20,7 @@ DEFINES       = select({
 }) + select({
     "//config/trace:trace?": ["TRACING"],
     "//conditions:default": []
-})
+}) + ["DEBUG_$(COMPILATION_MODE)"]
 
 BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
@@ -50,7 +50,7 @@ makeheaders(
     name             = "mkhdrs",
     hdrs_srcs        = ["dune_s7.c"],
     additional_srcs  = select({
-        "//config/profile:dev?": [
+        "//config/compilation_mode:fastbuild?": [
             ":ansi_colors.h",
             ":trace_dev.h"
         ],
