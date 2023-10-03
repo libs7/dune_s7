@@ -15,6 +15,7 @@ repo_paths(
     name = "test_repo_paths",
     repos = PROD_REPOS + [
         "@gopt//src:gopt",
+        "@libs7//plugin:s7plugin_test_config",
         "@unity//src:unity",
     ]
 )

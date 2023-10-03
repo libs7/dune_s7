@@ -1,9 +1,9 @@
 #ifndef _MACROS_H
 #define _MACROS_H
 
-#include "trace_dev.h"
-/* #include "trace_prod.h" */
-#include "gopt.h"
+#include "macros_debug.h"
+
+/* #include "gopt.h" */
 #include "libs7.h"
 
 #define DQ3 "\"\"\""

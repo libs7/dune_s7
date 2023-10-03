@@ -14,26 +14,28 @@ SRCS = []
 DEPS = BASE_DEPS + ["@uthash//src:uthash"]
 INCLUDE_PATHS = BASE_INCLUDE_PATHS + ["-I$(@uthash)/src"]
 COPTS         = BASE_COPTS + INCLUDE_PATHS
-DEFINES       = select({
-    "//config/profile:dev?": ["DEVBUILD"],
-    "//conditions:default": []
-}) + select({
-    "//config/trace:trace?": ["TRACING"],
-    "//conditions:default": []
-}) + ["DEBUG_$(COMPILATION_MODE)"]
+# DEFINES       = select({
+#     "//config/profile:dev?": ["DEVBUILD"],
+#     "//conditions:default": []
+# }) + select({
+#     "//config/trace:trace?": ["TRACING"],
+#     "//conditions:default": []
+# }) + ["DEBUG_$(COMPILATION_MODE)"]
 
-BASE_DEFINES
-LINKOPTS      = BASE_LINKOPTS
+DEFINES  = BASE_DEFINES
+LINKOPTS = BASE_LINKOPTS
 
 TOOLCHAINS = ["//:repo_paths"]
 
-exports_files(["trace_dev.h", "trace_prod.h"]) # for testing
+# for testing
+exports_files(["ansi_colors.h", "macros_debug.h", "macros_ndebug.h"])
 
 ##########
 s7_plugin(
     name  = "dune_s7",
     srcs = SRCS + [
         "dune_s7.c",
+        "dunefile_reader.c",
         ":mkhdrs",
     ],
     deps = DEPS,
@@ -48,14 +50,13 @@ s7_plugin(
 ################################################################
 makeheaders(
     name             = "mkhdrs",
-    hdrs_srcs        = ["dune_s7.c"],
-    additional_srcs  = select({
+    hdrs_srcs        = ["dune_s7.c", "dunefile_reader.c"],
+    additional_srcs  = [":ansi_colors.h"] + select({
         "//config/compilation_mode:fastbuild?": [
-            ":ansi_colors.h",
-            ":trace_dev.h"
+            ":macros_debug.h"
         ],
         "//conditions:default": [
-            ":trace_prod.h"
+            ":macros_ndebug.h"
         ]
     })
 )
@@ -68,6 +69,6 @@ makeheaders(
 #         "dune_s7.c",
 #     ],
 #     additional_srcs = [
-#         ":trace_prod.h"
+#         ":macros_ndebug.h"
 #     ]
 # )

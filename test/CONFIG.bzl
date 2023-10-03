@@ -2,9 +2,12 @@ load("@libs7//plugin:CONFIG.bzl",
      "PLUGIN_TEST_DEPS",
      "PLUGIN_TEST_INCLUDE_PATHS")
 
-TEST_SRCS  = ["//test:macros.h", "//src:trace_dev.h"]
+TEST_SRCS  = ["//test:macros.h", "//src:macros_debug.h"]
 
-TEST_DEPS  = ["//src:dune_s7"] + PLUGIN_TEST_DEPS
+TEST_DEPS  =  PLUGIN_TEST_DEPS + [
+    "//src:dune_s7",
+    "//test:test_functions"
+]
 
 TEST_INCLUDE_PATHS = [
     "-I$(@)/src",

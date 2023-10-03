@@ -1,3 +1,28 @@
+load("@makeheaders//src:RULES.bzl", "makeheaders")
+
+load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
+load("//test:CONFIG.bzl",
+     "TEST_SRCS",
+     # "TEST_DEPS",
+     "TEST_INCLUDE_PATHS",
+     "TEST_TOOLCHAINS",
+     "TEST_TIMEOUT", "TEST_TAGS")
+
+SRCS = TEST_SRCS
+DEPS = ["@libs7//plugin:s7plugin_test_config",
+        "//src:dune_s7",
+        "@unity//src:unity"]
+INCLUDE_PATHS = TEST_INCLUDE_PATHS + [
+]
+COPTS         = BASE_COPTS + INCLUDE_PATHS + [
+    "-I$(GENDIR)/$(@)/test"
+]
+DEFINES       = [] #["DEBUG_$(COMPILATION_MODE)"]
+LINKOPTS      = BASE_LINKOPTS
+TOOLCHAINS    = TEST_TOOLCHAINS
+TAGS          = TEST_TAGS + ["readers"]
+TIMEOUT       = TEST_TIMEOUT
+
 exports_files(["macros.h"])
 
 ################################################################
@@ -8,4 +33,68 @@ test_suite(
         "//test/include",
         "//test/readers:file",
     ]
+)
+
+################################################################
+cc_library(
+    name = "tmain",
+    linkstatic = True,
+    srcs = SRCS + ["test_main.c"],
+    local_defines = DEFINES,
+    # data = [
+    #     "//test/baddot/case010:data",
+    #     "//test/baddot/case020:data",
+    #     "//test/baddot/case030:data",
+    # ],
+    deps = DEPS + [":test_functions"],
+    copts = COPTS,
+    linkopts = LINKOPTS,
+    toolchains = TOOLCHAINS,
+    # timeout = TIMEOUT,
+    # tags = TAGS + ["readers"]
+    visibility = ["//test:__subpackages__"]
+)
+
+cc_library(
+    name = "test_functions",
+    linkstatic = True,
+    srcs = SRCS + ["test_functions.c", ":mkhdrs"],
+    local_defines = DEFINES,
+    deps = DEPS,
+    copts = COPTS + select({
+        "@platforms//os:macos": [
+            # "-Wno-gnu-statement-expression-from-macro-expansion"
+        ],
+        "//conditions:default": []
+    }),
+    linkopts = LINKOPTS,
+    toolchains = TOOLCHAINS,
+    visibility = ["//test:__subpackages__"]
+)
+
+################################################################
+makeheaders(
+    name             = "mkhdrs",
+    hdrs_srcs        = [
+        "test_functions.c",
+        "test_main.c",
+        "//test/include:include_test.c"
+    ],
+    # hdrs_renamed = {
+    #     ## same test.h will work for all include cases
+    #     "//test/include/case010:test.c": "include_test.h"
+    # },
+        # # "//test/include/case010:case010_test.c",
+        # "//test/include/case011:case011_test.c",
+        # # "//test/include/case015:case015_test.c",
+        # # "//test/include/case016:case016_test.c",
+    # ],
+    additional_srcs  = ["//src:ansi_colors.h"] + select({
+        "//config/compilation_mode:fastbuild?": [
+            "//src:macros_debug.h"
+        ],
+        "//conditions:default": [
+            "//src:macros_ndebug.h"
+        ]
+    })
 )
