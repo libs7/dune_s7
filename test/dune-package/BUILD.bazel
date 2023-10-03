@@ -1,0 +1,81 @@
+load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
+load("//test:CONFIG.bzl",
+     "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
+     "TEST_TOOLCHAINS",
+     "TEST_TIMEOUT", "TEST_TAGS")
+
+SRCS = TEST_SRCS
+DEPS = TEST_DEPS
+INCLUDE_PATHS = TEST_INCLUDE_PATHS
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEFINES       = ["DEBUG_$(COMPILATION_MODE)"]
+LINKOPTS      = BASE_LINKOPTS
+TOOLCHAINS    = TEST_TOOLCHAINS
+TAGS          = TEST_TAGS + ["readers", "read-errors"]
+TIMEOUT       = TEST_TIMEOUT
+
+exports_files(glob(["dunepkg_test.c"]))
+
+test_suite(
+    name  = "include",
+    tests = [
+        "//test/include/case010:test",
+        "//test/include/case011:test",
+        "//test/include/case013:test",
+        "//test/include/case015:test",
+        "//test/include/case016:test",
+        "//test/include/case020:test",
+        "//test/include/case022:test",
+        "//test/include/case023:test",
+        "//test/include/case024:test",
+        "//test/include/case025:test",
+        "//test/include/case026:test",
+        "//test/include/case040:test",
+        "//test/include/case042:test",
+        "//test/include/case050:test",
+    ]
+)
+
+################################################################
+# cc_test(
+#     name = "include",
+#     linkstatic = True,
+#     srcs = SRCS + ["Include_test.c"],
+#             # "//test/unit:common.c", "//test/unit:common.h",
+#             # "//src:libs7.h"],
+#     local_defines = DEFINES,
+#     deps = DEPS + [
+#         # "//lib/libsexp:dune_s7_archive",
+#     ],
+#     copts = COPTS + [
+#         "-Wno-gnu-statement-expression"
+#         # "-Isrc",
+#         # "-Idev",
+#         # "-Itest/unit",
+#         # "-I$(GENDIR)/lib/libtoml",
+#         # "-I$(GENDIR)/external/libs7/lib/libtoml",
+#         # "-fno-pie"
+#     ],
+#     data = [
+#         "//test/include/case010:data",
+#         "//test/include/case011:data",
+#         "//test/include/case013:data",
+#         "//test/include/case015:data",
+#         "//test/include/case016:data",
+
+#         "//test/include/case020:data",
+#         "//test/include/case022:data",
+#         "//test/include/case023:data",
+#         "//test/include/case024:data",
+#         "//test/include/case025:data",
+#         "//test/include/case026:data",
+
+#         "//test/include/case040:data",
+#         "//test/include/case042:data",
+#         "//test/include/case050:data",
+#     ],
+#     linkopts = LINKOPTS,
+#     toolchains = TOOLCHAINS,
+#     timeout = TIMEOUT,
+#     tags = TAGS + ["readers"]
+# )

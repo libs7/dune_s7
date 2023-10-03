@@ -293,6 +293,161 @@ char *read_dunefile(const char *dunefile_name)
         /*                  s7_make_string(s7, strerror(errno)))); */
     }
 
+    log_debug("fopened %s", dunefile_name);
+    if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
+        /* Handle error */
+        LOG_ERROR(0, "fstat error", "");
+        // exit?
+        goto cleanup;
+    }
+
+    file_size = stbuf.st_size;
+#if defined(DEBUG_fastbuild)
+    LOG_DEBUG(1, "filesize: %d", file_size);
+#endif
+
+    /* allocate enough to handle expansion due to
+       converting '.' to "./" */
+    inbuf = (char*)calloc(file_size + 1024, sizeof(char));
+    if (inbuf == NULL) {
+        /* Handle error */
+        LOG_ERROR(0, "malloc file_size fail", "");
+        goto cleanup;
+    }
+
+    /* FIXME: what about e.g. unicode in string literals? */
+    errno = 0;
+    instream = fdopen(fd, "r");
+    if (instream == NULL) {
+        /* Handle error */
+        LOG_ERROR(0, "fdopen failure: %s", dunefile_name);
+        /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
+        /*        dunefile_name); */
+               /* utstring_body(dunefile_name)); */
+        perror(NULL);
+        close(fd);
+        goto cleanup;
+    } else {
+#if defined(DEBUG_fastbuild)
+        LOG_DEBUG(1, "fdopened %s", dunefile_name);
+        /* utstring_body(dunefile_name)); */
+#endif
+    }
+
+    int c;
+    int peeker;
+    size_t i = 0;
+    /* now read file one char at a time */
+    /* baddot cases:  " .)", " . ", "(. " */
+    errno = 0;
+    while ((c = fgetc(instream)) != EOF) {
+        fprintf(stderr, "C: %d, %c\n", c, c);
+        log_debug("char: %c", (char)c);
+        if (c == '.') {
+            peeker = fgetc(instream);
+            if (peeker == ')') { // most common: ".)"
+                if (isspace(inbuf[i - 1])) {
+                    LOG_DEBUG(0, "FOUND BADDOT1: %s", inbuf);
+                    inbuf[i++] = '.';
+                    inbuf[i++] = '/';
+                    ungetc(peeker, instream); // rewind
+                    continue;
+                }
+            }
+            else if (peeker == ' ') {
+                if (isspace(inbuf[i - 1])) { // " . "
+                    LOG_DEBUG(0, "FOUND BADDOT2: %s", inbuf);
+                    inbuf[i++] = '.';
+                    inbuf[i++] = '/';
+                    ungetc(peeker, instream); // rewind
+                } else {
+                    if (inbuf[i - 1] == '(') { // "(. "
+                        LOG_DEBUG(0, "FOUND BADDOT3: %s",
+                                  inbuf);
+                        inbuf[i++] = '.';
+                        inbuf[i++] = '/';
+                        ungetc(peeker, instream); // rewind
+                        continue;
+                    } else {
+                        /* "x.y " */
+                        ungetc(peeker, instream); // rewind
+                        inbuf[i++] = (char)c;
+                        continue;
+                    }
+                }
+            }
+            else {
+                // not  " .)" nor  " . " so dot is ok
+                /* inbuf[i++] = 'X'; */
+                /* inbuf[i++] = (char)c; */
+                ungetc(peeker, instream); // rewind, c == '.'
+                inbuf[i++] = (char)c;
+                /* inbuf[i++] = 'Y'; */
+            }
+        } else {
+            // c != '.'
+            inbuf[i++] = (char)c;
+        }
+        errno = 0;
+    } // end while
+
+    /* If the stream is at end-of-file OR a read error occurs,
+       fgetc returns EOF. */
+    if (feof(instream)) {
+        if (errno != 0) {
+            log_error("fgetc error for %s: %s",
+                      dunefile_name, strerror(errno));
+        }
+    } else {
+        LOG_WARN(0, "bad feof? %s", dunefile_name);
+        if (!ferror(instream)) {
+            LOG_WARN(0, "ferror set: %s", dunefile_name);
+        } else {
+            LOG_WARN(0, "ferror not set: %s", dunefile_name);
+        }
+    }
+
+    /* log_debug("INBUF:\n %s", (char*)inbuf); */
+
+    return (char*)inbuf;
+
+cleanup:
+    //FIXME
+    if (instream != NULL)
+    {
+        fclose(instream);
+        close(fd);
+    }
+    if (inbuf != NULL) free(inbuf);
+    /* if (outbuf != NULL) free(outbuf); */
+    return NULL;
+}
+
+char *xread_dunefile(const char *dunefile_name)
+{
+    TRACE_ENTRY;
+    /* log_debug("df: %s", dunefile_name); */
+    TRACE_LOG("dunefile: %s", dunefile_name);
+
+    size_t file_size;
+    char *inbuf = NULL;
+    struct stat stbuf;
+    int fd;
+    FILE *instream = NULL;
+
+    errno = 0;
+    fd = open(dunefile_name, O_RDONLY);
+    if (fd == -1) {
+        /* Handle error */
+        LOG_ERROR(0, "fd open error: %s", dunefile_name);
+        LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
+        /* s7_error(s7, s7_make_symbol(s7, "fd-open-error"), */
+        /*          s7_list(s7, 3, */
+        /*                  s7_make_string(s7, "fd open error: ~A, ~A"), */
+        /*                  s7_make_string(s7, dunefile_name), */
+        /*                  s7_make_string(s7, strerror(errno)))); */
+    }
+
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
         /* Handle error */
         LOG_ERROR(0, "fstat error", "");
@@ -446,58 +601,6 @@ char *read_dunefile(const char *dunefile_name)
         *outptr++ = *inptr++;
     }
 
-/*     inptr = (char*)inbuf; */
-/*     while (true) { */
-/*         cursor = strstr(inptr, ".)"); */
-
-/* /\* https://stackoverflow.com/questions/54592366/replacing-one-character-in-a-string-with-multiple-characters-in-c *\/ */
-
-/*         if (cursor == NULL) { */
-/* /\* #if defined(DEBUG_fastbuild) *\/ */
-/* /\*             if (mibl_debug) LOG_DEBUG(1, "remainder: '%s'", inptr); *\/ */
-/* /\* #endif *\/ */
-/*             size_t ct = strlcpy(outptr, (const char*)inptr, file_size); // strlen(outptr)); */
-/*             (void)ct;           /\* prevent -Wunused-variable *\/ */
-/* /\* #if defined(DEBUG_fastbuild) *\/ */
-/* /\*             if (mibl_debug) LOG_DEBUG(1, "concatenated: '%s'", outptr); *\/ */
-/* /\* #endif *\/ */
-/*             break; */
-/*         } else { */
-/* #if defined(DEBUG_fastbuild) */
-/*             LOG_ERROR(0, "FOUND and fixing \".)\" at pos: %d", cursor - inbuf); */
-/* #endif */
-/*             size_t ct = strlcpy(outptr, (const char*)inptr, cursor - inptr); */
-/* #if defined(DEBUG_fastbuild) */
-/*             LOG_DEBUG(1, "copied %d chars", ct); */
-/*             /\* LOG_DEBUG(1, "to buf: '%s'", outptr); *\/ */
-/* #endif */
-/*             /\* if (ct >= DUNE_BUFSZ) { *\/ */
-/*             if (ct >= outFileSizeCounter) { */
-/*                 printf("output string has been truncated!\n"); */
-/*             } */
-/*             outptr = outptr + (cursor - inptr) - 1; */
-/*             outptr[cursor - inptr] = '\0'; */
-/*             //FIXME: use memcpy */
-/*             ct = strlcat(outptr, " ./", outFileSizeCounter); // DUNE_BUFSZ); */
-/*             outptr += 3; */
-
-/*             inptr = inptr + (cursor - inptr) + 1; */
-/*             /\* printf(GRN "inptr:\n" CRESET " %s\n", inptr); *\/ */
-
-/*             if (ct >= outFileSizeCounter) { // DUNE_BUFSZ) { */
-/*                 LOG_ERROR(0, "write count exceeded output bufsz\n"); */
-/*                 /\* printf(RED "ERROR" CRESET "write count exceeded output bufsz\n"); *\/ */
-/*                 free(inbuf); */
-/*                 exit(EXIT_FAILURE); */
-/*                 // output string has been truncated */
-/*             } */
-/*         } */
-/*     } */
-    /* free(inbuf); */
-
-    /* char *tmp = strndup((char*) outbuf, strlen((char*)outbuf)); */
-    /* LOG_DEBUG(1, "x AAAAAAAAAAAAAAAA9"); */
-    /* free(outbuf); */
     return (char*)outbuf;
 
 cleanup:
