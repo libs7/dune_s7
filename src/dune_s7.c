@@ -1027,7 +1027,6 @@ static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer str)
  */
 static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 {
-    log_debug("G_DUNE_PKG");
     TRACE_ENTRY;
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP(1, "args", args);
