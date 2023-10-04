@@ -1,2 +1,15 @@
-((eolstring
-" this is a single-line eol string"))
+((eolstring1a "this is a single-line eol string")
+
+(eolstring1b "this is a single-line eol string")
+
+(eolstring1c " this is a single-line eol string")
+
+(eolstring2a "this is a single-line eol string")
+
+(eolstring2b "this is a single-line eol string")
+
+(eolstring2c "    this is a single-line eol string")
+
+(eolstring3a "this is a single-line eol string")
+
+(eolstring3b "this is a single-line eol string"))

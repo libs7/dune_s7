@@ -142,9 +142,14 @@ char *read_dunefile(const char *dunefile_name)
                         // we're already in a block
                         continue;
                     } else {
-                        LOG_DEBUG(0, "STARTING EOLSTR", "");
+                        LOG_DEBUG(0, "entering EOLSTR", "");
                         multiline_string_mode = true;
                         inbuf[i++] = '"';
+                        // discard initial space following delim
+                        peeker2 = fgetc(instream);
+                        if (peeker2 != ' ') {
+                            inbuf[i++] = peeker2;
+                        }
                     }
                 } else {
                     /* not staring a multiline string */
@@ -159,19 +164,74 @@ char *read_dunefile(const char *dunefile_name)
         } else if (c == '\n') {
             LOG_DEBUG(0, "NEWLINE", "");
             if (multiline_string_mode) {
-                LOG_DEBUG(0, "in EOLSTR", "");
+                LOG_DEBUG(0, "in EOLSTR mode", "");
                 /* end-of-line in multiline mode */
                 /* peek to find if next line starts
                    with "\| or "\>
                    NB: a space after a delim is ignored
                 */
-                if (continue_multiline(instream)) {
+                // 1. consume whitespace
+                int space_ct = 0;
+                int eolpeeker = fgetc(instream);
+                if (eolpeeker == '\n') {
+                    LOG_DEBUG(0, "TERMINATING EOL", "");
+                    multiline_string_mode = false;
+                    inbuf[i++] = '"'; // eol terminator
+                    continue;
+                }
+                while (isspace(eolpeeker)) {
+                    LOG_DEBUG(0, "WS", "");
+                    //FIXME: what about tabs?
+                    space_ct++;
+                    eolpeeker = fgetc(instream);
+                }
+                LOG_DEBUG(0, "NOT WS: '%c'", eolpeeker);
+                // 2. is first non-ws char an eol delim?
+                if (eolpeeker == '"') {
+                    LOG_DEBUG(0, "MAYBE EOL", "");
+                    eolpeeker = fgetc(instream);
+                    if (eolpeeker == '\\') {
+                        LOG_DEBUG(0, "MORE MAYBE EOL", "");
+                        eolpeeker = fgetc(instream);
+                        if (eolpeeker == '|') {
+                            LOG_DEBUG(0, "EOL | DELIM", "");
+                            // consume leading SP
+                            eolpeeker = fgetc(instream);
+                            if (eolpeeker != ' ') {
+                                ungetc(eolpeeker, instream);
+                            }
+                            inbuf[i++] = '\\';
+                            inbuf[i++] = 'n';
+                        } else if (eolpeeker == '>') {
+                            LOG_DEBUG(0, "EOL > DELIM", "");
+                            inbuf[i++] = '\n';
+                        } else {
+                            LOG_DEBUG(0, "TERMINATING EOL", "");
+                            inbuf[i++] = '"'; // eol terminator
+                        }
+                    } else {
+                        LOG_DEBUG(0, "TERMINATING EOL", "");
+                        inbuf[i++] = '"'; // eol terminator
+
+                        // restore in reverse order
+                        LOG_DEBUG(0, "RESTORING EOLP %c", eolpeeker);
+                        ungetc(eolpeeker, instream);
+                        ungetc('"', instream);
+                        for (int j = 0; j < space_ct; j++) {
+                            LOG_DEBUG(0, "RESTORING SP", "");
+                            ungetc(' ', instream);
+                        }
+                        multiline_string_mode = false;
+                    }
                 } else {
+                    LOG_DEBUG(0, "TERMINATING EOL", "");
+                    // no: terminate preceding eol
                     inbuf[i++] = '"';
+                    inbuf[i++] = eolpeeker;
                     multiline_string_mode = false;
                 }
             } else {
-                LOG_DEBUG(0, "NOT in EOLSTR", "");
+                LOG_DEBUG(0, "newline NOT in EOLSTR", "");
                 inbuf[i++] = (char)c;
             }
         } else {

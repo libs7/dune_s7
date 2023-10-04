@@ -29,7 +29,7 @@ cc_test(
     copts = COPTS + [
         "-Wno-gnu-statement-expression",
         "-I$(GENDIR)/$(@)/test",
-        "-DCASE='\"020\"'"
+        "-DCASE='\"013\"'"
     ],
     data = [":data"],
     linkopts = LINKOPTS,

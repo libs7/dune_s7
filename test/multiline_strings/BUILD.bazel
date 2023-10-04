@@ -20,7 +20,9 @@ test_suite(
     name  = "multiline_strings",
     tests = [
         "//test/multiline_strings/case010:test",
-        # "//test/multiline_strings/case020:test",
-        # "//test/multiline_strings/case030:test",
+        "//test/multiline_strings/case013:test",
+        "//test/multiline_strings/case016:test",
+        "//test/multiline_strings/case020:test",
+        "//test/multiline_strings/case022:test",
     ]
 )

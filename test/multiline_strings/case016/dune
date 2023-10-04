@@ -1,0 +1,47 @@
+(eolstring1a
+ "\| this is an eol string
+ "followed by a std string"
+)
+
+(eolstring1b
+ "\| this is an eol string
+     "followed by a std string"
+)
+
+(eolstring1c
+ "\| this is an eol string
+
+ "followed by a std string"
+)
+
+(eolstring2a
+ "this is  a std string"
+ "\| followed by an eol string
+)
+
+(eolstring2b
+ "this is  a std string"
+
+ "\| followed by an eol string
+)
+
+(eolstring2c
+ "this is  a std string"
+     "\| followed by an eol string
+)
+
+(eolstring3a
+ (foo)
+ "\| this is a single-line eol string
+)
+
+(eolstring3b
+ "\| this is a single-line eol string
+ (bar)
+)
+
+(eolstring3c
+ (foo)
+ "\| this is a single-line eol string
+ (bar)
+)

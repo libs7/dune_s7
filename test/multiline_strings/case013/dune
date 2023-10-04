@@ -1,0 +1,53 @@
+(eolstring1a
+ "\| this is eol string A
+
+ "\| this is eol string B
+)
+
+(eolstring1b
+ "\| this is eol string A
+
+ "\| this is line 1 of block A
+ "\| and this is line 2 of block A
+
+)
+
+(eolstring1c
+ "\| this is line 1 of block A
+ "\| and this is line 2 of block A
+
+ "\| this is eol string B
+)
+
+(eolstring1c
+ "\| this is eol string A
+
+ "\| this is line 1 of block A
+ "\| and this is line 2 of block A
+
+ "\| this is eol string B
+)
+
+(eolstring2a
+ "\| this is line 1 of block A
+ "\| and this is line 2 of block A
+
+ "\| this is line 1 of block B
+ "\| and this is line 2 of block B
+
+)
+
+(eolstring2b
+ "\| this is eol string A
+
+ "\| this is line 1 of block A
+ "\| and this is line 2 of block A
+
+ "\| this is eol string B
+
+ "\| this is line 1 of block B
+ "\| and this is line 2 of block B
+
+ "\| this is eol string C
+
+)

@@ -17,22 +17,9 @@ TIMEOUT       = TEST_TIMEOUT
 exports_files(glob(["dunepkg_test.c"]))
 
 test_suite(
-    name  = "include",
+    name  = "dune-package",
     tests = [
-        "//test/include/case010:test",
-        "//test/include/case011:test",
-        "//test/include/case013:test",
-        "//test/include/case015:test",
-        "//test/include/case016:test",
-        "//test/include/case020:test",
-        "//test/include/case022:test",
-        "//test/include/case023:test",
-        "//test/include/case024:test",
-        "//test/include/case025:test",
-        "//test/include/case026:test",
-        "//test/include/case040:test",
-        "//test/include/case042:test",
-        "//test/include/case050:test",
+        "//test/dune-package/case300:test",
     ]
 )
 
