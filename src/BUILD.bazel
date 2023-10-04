@@ -42,7 +42,7 @@ s7_plugin(
     copts = COPTS + [
         "-I$(GENDIR)/$(@)/src"
     ],
-    defines = DEFINES,
+    local_defines = DEFINES,
     toolchains = TOOLCHAINS,
     visibility = ["//visibility:public"]
 )
