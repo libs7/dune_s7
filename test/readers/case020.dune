@@ -1,6 +1,0 @@
-(foo "line with embedded\nnewline")
-
-;; end-of-line strings
-(eolstring
- "\| this is an eol string
-)

@@ -23,13 +23,13 @@ TIMEOUT       = TEST_TIMEOUT
 cc_test(
     name = "test",
     # linkstatic = True,
-    srcs = SRCS + ["//test/baddot:baddot_test.c"],
+    srcs = SRCS + ["//test/readers:readers_test.c"],
     local_defines = DEFINES,
     deps = ["//test:tmain"], # DEPS,
     copts = COPTS + [
         "-Wno-gnu-statement-expression",
         "-I$(GENDIR)/$(@)/test",
-        "-DCASE='\"030\"'"
+        "-DCASE='\"010\"'"
     ],
     data = [":data"],
     linkopts = LINKOPTS,

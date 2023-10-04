@@ -13,8 +13,8 @@ int main(int argc, char **argv)
 void test_runner(void)
 {
     s7_int gc_expected = -1;
-    data_fname_str = "test/baddot/case" CASE "/dune";
-    data_expected = read_expected("test/baddot/case" CASE "/sexp.expected");
+    data_fname_str = "test/multiline_strings/case" CASE "/dune";
+    data_expected = read_expected("test/multiline_strings/case" CASE "/sexp.expected");
     gc_expected = s7_gc_protect(s7, data_expected);
     RUN_TEST(test_read_file_port);
     RUN_TEST(test_with_input_from_file);

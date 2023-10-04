@@ -4,26 +4,36 @@ filegroup(
     visibility = ["//visibility:public"]
 )
 
-# load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
-# load("//test/app:BUILD.bzl", "test_mustachios")
+load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
+load("//test:CONFIG.bzl",
+     "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
+     "TEST_TOOLCHAINS",
+     "TEST_TIMEOUT", "TEST_TAGS")
 
-# exports_files(["dune"])
+SRCS = TEST_SRCS
+DEPS = TEST_DEPS + ["//test:tmain"]
+INCLUDE_PATHS = TEST_INCLUDE_PATHS
+COPTS         = BASE_COPTS + INCLUDE_PATHS
+DEFINES       = ["DEBUG_$(COMPILATION_MODE)"]
+LINKOPTS      = BASE_LINKOPTS
+TOOLCHAINS    = TEST_TOOLCHAINS
+TAGS          = TEST_TAGS + ["readers", "read-errors"]
+TIMEOUT       = TEST_TIMEOUT
 
-# TAGS = ["dune", "toml", "batch", "mustache"]
-
-# # diff_test(
-# #     name  = "src",
-# #     file1 = "cargo.expected",
-# #     file2 = "cargo.actual",
-# #     timeout = "short",
-# #     tags  = TAGS + ["toml"]
-# # )
-
-# test_mustachios(
-#     name     = "sexp_dune",
-#     script   = "//test/batch/dune:Mustachios_main.scm",
-#     out      = "dune.toml",
-#     data     = "dune",
-#     template = "dune_to_toml.mustache",
-#     tags     = TAGS
-# )
+cc_test(
+    name = "test",
+    # linkstatic = True,
+    srcs = SRCS + ["//test/baddot:baddot_test.c"],
+    local_defines = DEFINES,
+    deps = ["//test:tmain"], # DEPS,
+    copts = COPTS + [
+        "-Wno-gnu-statement-expression",
+        "-I$(GENDIR)/$(@)/test",
+        "-DCASE='\"020\"'"
+    ],
+    data = [":data"],
+    linkopts = LINKOPTS,
+    toolchains = TOOLCHAINS,
+    timeout = TIMEOUT,
+    tags = TAGS + ["readers"]
+)

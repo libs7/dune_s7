@@ -11,25 +11,34 @@ COPTS         = BASE_COPTS + INCLUDE_PATHS
 DEFINES       = ["DEBUG_$(COMPILATION_MODE)"]
 LINKOPTS      = BASE_LINKOPTS
 TOOLCHAINS    = TEST_TOOLCHAINS
-TAGS          = TEST_TAGS + ["readers", "readers", "read-errrors"]
+TAGS          = TEST_TAGS + ["readers"]
 TIMEOUT       = TEST_TIMEOUT
 
-################################################################
-cc_test(
-    name = "file",
-    linkstatic = True,
-    srcs = SRCS + ["file_readers_test.c"],
-    local_defines = DEFINES,
-    data = [
-        "case010.dune", "case010.expected",
-        "case020.dune", "case020.expected"
-    ],
-    deps = DEPS,
-    copts = COPTS + [
-        "-Wno-gnu-statement-expression"
-    ],
-    linkopts = LINKOPTS,
-    toolchains = TOOLCHAINS,
-    timeout = TIMEOUT,
-    tags = TAGS
+exports_files(["readers_test.c"])
+
+test_suite(
+    name  = "readers",
+    tests = [
+        "//test/readers/case010:test",
+        "//test/readers/case020:test",
+    ]
 )
+
+################################################################
+# cc_test(
+#     name = "baddot",
+#     linkstatic = True,
+#     srcs = SRCS + ["baddot_test.c"],
+#     local_defines = DEFINES,
+#     data = [
+#         "//test/baddot/case010:data",
+#         "//test/baddot/case020:data",
+#         "//test/baddot/case030:data",
+#     ],
+#     deps = DEPS,
+#     copts = COPTS,
+#     linkopts = LINKOPTS,
+#     toolchains = TOOLCHAINS,
+#     timeout = TIMEOUT,
+#     tags = TAGS + ["readers"]
+# )

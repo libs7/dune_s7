@@ -11,6 +11,209 @@
 #include "libs7.h"
 #include "dunefile_reader.h"
 
+bool multiline_string_mode = false;
+
+char *read_dunefile(const char *dunefile_name)
+{
+    TRACE_ENTRY;
+    /* log_debug("df: %s", dunefile_name); */
+    TRACE_LOG("dunefile: %s", dunefile_name);
+
+    size_t file_size;
+    char *inbuf = NULL;
+    struct stat stbuf;
+    int fd;
+    FILE *instream = NULL;
+
+    errno = 0;
+    fd = open(dunefile_name, O_RDONLY);
+    if (fd == -1) {
+        /* Handle error */
+        log_error("fd open error: %s", dunefile_name);
+        LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
+        exit(EXIT_FAILURE);
+    }
+
+    /* log_debug("fopened %s", dunefile_name); */
+    if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
+        /* Handle error */
+        LOG_ERROR(0, "fstat error", "");
+        // exit?
+        goto cleanup;
+    }
+
+    file_size = stbuf.st_size;
+#if defined(DEBUG_fastbuild)
+    LOG_DEBUG(1, "filesize: %d", file_size);
+#endif
+
+    /* allocate enough to handle expansion due to
+       converting '.' to "./" */
+    inbuf = (char*)calloc(file_size + 1024, sizeof(char));
+    if (inbuf == NULL) {
+        /* Handle error */
+        LOG_ERROR(0, "malloc file_size fail", "");
+        goto cleanup;
+    }
+
+    /* FIXME: what about e.g. unicode in string literals? */
+    errno = 0;
+    instream = fdopen(fd, "r");
+    if (instream == NULL) {
+        /* Handle error */
+        LOG_ERROR(0, "fdopen failure: %s", dunefile_name);
+        /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
+        /*        dunefile_name); */
+               /* utstring_body(dunefile_name)); */
+        perror(NULL);
+        close(fd);
+        goto cleanup;
+    } else {
+#if defined(DEBUG_fastbuild)
+        LOG_DEBUG(1, "fdopened %s", dunefile_name);
+        /* utstring_body(dunefile_name)); */
+#endif
+    }
+
+    int c;
+    int peeker;
+    size_t i = 0;
+    /* now read file one char at a time */
+    /* baddot cases:  " .)", " . ", "(. " */
+    errno = 0;
+    multiline_string_mode = false;
+    while ((c = fgetc(instream)) != EOF) {
+        LOG_DEBUG(0, "inbuf: %s", (char*)inbuf);
+        LOG_DEBUG(0, "C: '%c'", c);
+        /* log_debug("char: %c", (char)c); */
+        if (c == '.') {
+            peeker = fgetc(instream);
+            if (peeker == ')') { // most common: ".)"
+                if (isspace(inbuf[i - 1])) {
+                    LOG_DEBUG(0, "FOUND BADDOT1: %s", inbuf);
+                    inbuf[i++] = '.';
+                    inbuf[i++] = '/';
+                    ungetc(peeker, instream); // rewind
+                    continue;
+                }
+            }
+            else if (peeker == ' ') {
+                if (isspace(inbuf[i - 1])) { // " . "
+                    LOG_DEBUG(0, "FOUND BADDOT2: %s", inbuf);
+                    inbuf[i++] = '.';
+                    inbuf[i++] = '/';
+                    ungetc(peeker, instream); // rewind
+                } else {
+                    if (inbuf[i - 1] == '(') { // "(. "
+                        LOG_DEBUG(0, "FOUND BADDOT3: %s",
+                                  inbuf);
+                        inbuf[i++] = '.';
+                        inbuf[i++] = '/';
+                        ungetc(peeker, instream); // rewind
+                        continue;
+                    } else {
+                        /* "x.y " */
+                        ungetc(peeker, instream); // rewind
+                        inbuf[i++] = (char)c;
+                        continue;
+                    }
+                }
+            }
+            else {
+                // not  " .)" nor  " . " so dot is ok
+                /* inbuf[i++] = 'X'; */
+                /* inbuf[i++] = (char)c; */
+                ungetc(peeker, instream); // rewind, c == '.'
+                inbuf[i++] = (char)c;
+                /* inbuf[i++] = 'Y'; */
+            }
+        } else if (c == '"') {
+            /* multiline strings start with "\|
+               following lines start with "\| or "\>
+             */
+            peeker = fgetc(instream);
+            LOG_DEBUG(0, "peeker: '%c'", peeker);
+            if (peeker == '\\') { // single '\', escaped in c
+                int peeker2 = fgetc(instream);
+                LOG_DEBUG(0, "peeker2: '%c'", peeker2);
+                if (peeker2 == '|') {
+                    LOG_DEBUG(0, "EOLSTR DELIM", "");
+                    if (multiline_string_mode) {
+                        // we're already in a block
+                        continue;
+                    } else {
+                        LOG_DEBUG(0, "STARTING EOLSTR", "");
+                        multiline_string_mode = true;
+                        inbuf[i++] = '"';
+                    }
+                } else {
+                    /* not staring a multiline string */
+                    ungetc(peeker, instream);
+                    inbuf[i++] = (char)c;
+                }
+            } else {
+                /* not starting multiline string */
+                ungetc(peeker, instream);
+                inbuf[i++] = (char)c;
+            }
+        } else if (c == '\n') {
+            LOG_DEBUG(0, "NEWLINE", "");
+            if (multiline_string_mode) {
+                LOG_DEBUG(0, "in EOLSTR", "");
+                /* end-of-line in multiline mode */
+                /* peek to find if next line starts
+                   with "\| or "\>
+                   NB: a space after a delim is ignored
+                */
+                if (continue_multiline(instream)) {
+                } else {
+                    inbuf[i++] = '"';
+                    multiline_string_mode = false;
+                }
+            } else {
+                LOG_DEBUG(0, "NOT in EOLSTR", "");
+                inbuf[i++] = (char)c;
+            }
+        } else {
+            // c != '.'
+            inbuf[i++] = (char)c;
+        }
+        errno = 0;
+    } // end while
+
+    /* If the stream is at end-of-file OR a read error occurs,
+       fgetc returns EOF. */
+    if (feof(instream)) {
+        if (errno != 0) {
+            log_error("fgetc error for %s: %s",
+                      dunefile_name, strerror(errno));
+        }
+    } else {
+        LOG_WARN(0, "bad feof? %s", dunefile_name);
+        if (!ferror(instream)) {
+            LOG_WARN(0, "ferror set: %s", dunefile_name);
+        } else {
+            LOG_WARN(0, "ferror not set: %s", dunefile_name);
+        }
+    }
+
+    /* log_debug("INBUF:\n %s", (char*)inbuf); */
+
+    return (char*)inbuf;
+
+cleanup:
+    //FIXME
+    if (instream != NULL)
+    {
+        fclose(instream);
+        close(fd);
+    }
+    if (inbuf != NULL) free(inbuf);
+    /* if (outbuf != NULL) free(outbuf); */
+    return NULL;
+}
+
+/* ################ OBSOLETE ################ */
 const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
     TRACE_ENTRY;
@@ -268,160 +471,6 @@ cleanup:
     return NULL;
 }
 
-char *read_dunefile(const char *dunefile_name)
-{
-    TRACE_ENTRY;
-    /* log_debug("df: %s", dunefile_name); */
-    TRACE_LOG("dunefile: %s", dunefile_name);
-
-    size_t file_size;
-    char *inbuf = NULL;
-    struct stat stbuf;
-    int fd;
-    FILE *instream = NULL;
-
-    errno = 0;
-    fd = open(dunefile_name, O_RDONLY);
-    if (fd == -1) {
-        /* Handle error */
-        LOG_ERROR(0, "fd open error: %s", dunefile_name);
-        LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
-        /* s7_error(s7, s7_make_symbol(s7, "fd-open-error"), */
-        /*          s7_list(s7, 3, */
-        /*                  s7_make_string(s7, "fd open error: ~A, ~A"), */
-        /*                  s7_make_string(s7, dunefile_name), */
-        /*                  s7_make_string(s7, strerror(errno)))); */
-    }
-
-    log_debug("fopened %s", dunefile_name);
-    if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
-        /* Handle error */
-        LOG_ERROR(0, "fstat error", "");
-        // exit?
-        goto cleanup;
-    }
-
-    file_size = stbuf.st_size;
-#if defined(DEBUG_fastbuild)
-    LOG_DEBUG(1, "filesize: %d", file_size);
-#endif
-
-    /* allocate enough to handle expansion due to
-       converting '.' to "./" */
-    inbuf = (char*)calloc(file_size + 1024, sizeof(char));
-    if (inbuf == NULL) {
-        /* Handle error */
-        LOG_ERROR(0, "malloc file_size fail", "");
-        goto cleanup;
-    }
-
-    /* FIXME: what about e.g. unicode in string literals? */
-    errno = 0;
-    instream = fdopen(fd, "r");
-    if (instream == NULL) {
-        /* Handle error */
-        LOG_ERROR(0, "fdopen failure: %s", dunefile_name);
-        /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
-        /*        dunefile_name); */
-               /* utstring_body(dunefile_name)); */
-        perror(NULL);
-        close(fd);
-        goto cleanup;
-    } else {
-#if defined(DEBUG_fastbuild)
-        LOG_DEBUG(1, "fdopened %s", dunefile_name);
-        /* utstring_body(dunefile_name)); */
-#endif
-    }
-
-    int c;
-    int peeker;
-    size_t i = 0;
-    /* now read file one char at a time */
-    /* baddot cases:  " .)", " . ", "(. " */
-    errno = 0;
-    while ((c = fgetc(instream)) != EOF) {
-        fprintf(stderr, "C: %d, %c\n", c, c);
-        log_debug("char: %c", (char)c);
-        if (c == '.') {
-            peeker = fgetc(instream);
-            if (peeker == ')') { // most common: ".)"
-                if (isspace(inbuf[i - 1])) {
-                    LOG_DEBUG(0, "FOUND BADDOT1: %s", inbuf);
-                    inbuf[i++] = '.';
-                    inbuf[i++] = '/';
-                    ungetc(peeker, instream); // rewind
-                    continue;
-                }
-            }
-            else if (peeker == ' ') {
-                if (isspace(inbuf[i - 1])) { // " . "
-                    LOG_DEBUG(0, "FOUND BADDOT2: %s", inbuf);
-                    inbuf[i++] = '.';
-                    inbuf[i++] = '/';
-                    ungetc(peeker, instream); // rewind
-                } else {
-                    if (inbuf[i - 1] == '(') { // "(. "
-                        LOG_DEBUG(0, "FOUND BADDOT3: %s",
-                                  inbuf);
-                        inbuf[i++] = '.';
-                        inbuf[i++] = '/';
-                        ungetc(peeker, instream); // rewind
-                        continue;
-                    } else {
-                        /* "x.y " */
-                        ungetc(peeker, instream); // rewind
-                        inbuf[i++] = (char)c;
-                        continue;
-                    }
-                }
-            }
-            else {
-                // not  " .)" nor  " . " so dot is ok
-                /* inbuf[i++] = 'X'; */
-                /* inbuf[i++] = (char)c; */
-                ungetc(peeker, instream); // rewind, c == '.'
-                inbuf[i++] = (char)c;
-                /* inbuf[i++] = 'Y'; */
-            }
-        } else {
-            // c != '.'
-            inbuf[i++] = (char)c;
-        }
-        errno = 0;
-    } // end while
-
-    /* If the stream is at end-of-file OR a read error occurs,
-       fgetc returns EOF. */
-    if (feof(instream)) {
-        if (errno != 0) {
-            log_error("fgetc error for %s: %s",
-                      dunefile_name, strerror(errno));
-        }
-    } else {
-        LOG_WARN(0, "bad feof? %s", dunefile_name);
-        if (!ferror(instream)) {
-            LOG_WARN(0, "ferror set: %s", dunefile_name);
-        } else {
-            LOG_WARN(0, "ferror not set: %s", dunefile_name);
-        }
-    }
-
-    /* log_debug("INBUF:\n %s", (char*)inbuf); */
-
-    return (char*)inbuf;
-
-cleanup:
-    //FIXME
-    if (instream != NULL)
-    {
-        fclose(instream);
-        close(fd);
-    }
-    if (inbuf != NULL) free(inbuf);
-    /* if (outbuf != NULL) free(outbuf); */
-    return NULL;
-}
 
 char *xread_dunefile(const char *dunefile_name)
 {

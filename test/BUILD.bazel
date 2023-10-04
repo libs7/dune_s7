@@ -78,6 +78,7 @@ makeheaders(
     hdrs_srcs        = [
         "test_functions.c",
         "test_main.c",
+        "//test/baddot:baddot_test.c",
         "//test/include:include_test.c"
     ],
     # hdrs_renamed = {
