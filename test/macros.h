@@ -1,7 +1,7 @@
 #ifndef _MACROS_H
 #define _MACROS_H
 
-#include "macros_debug.h"
+/* #include "macros_debug.h" */
 
 /* #include "gopt.h" */
 #include "libs7.h"

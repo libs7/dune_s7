@@ -566,6 +566,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
 
     s7_pointer errtype7 = s7_eval_c_string(s7,  "((owlet) 'error-type)");
     const char *errtype = s7_object_to_c_string(s7, errtype7);
+    (void)errtype;
     /* LOG_DEBUG(1, "errtype: %s", errtype); */
     if (errtype7 == s7_make_symbol(s7, "io-error")) {
         LOG_ERROR(0, "io-error: %s", errtype);
@@ -918,11 +919,15 @@ static s7_pointer _dune_read_input_port(s7_scheme*s7, s7_pointer inport)
         LOG_INFO(0, "string port (inport w/o filename)", "");
         s7_pointer _curlet = s7_curlet(s7);
         char *tmp = s7_object_to_c_string(s7, _curlet);
+        (void)tmp;
         LOG_DEBUG(1, "CURLET: %s", tmp);
         s7_pointer dunefile7 = s7_let_ref(s7, s7_curlet(s7),
                                s7_make_symbol(s7, "-dune-infile"));
         /* TRACE_S7_DUMP(1, "dunefile7", dunefile7); */
         dunefile = s7_string(dunefile7);
+
+        log_error("FIXME");
+        exit(EXIT_FAILURE);
     /* } else { */
     /*     LOG_DEBUG(1, "inport filename: %s", dunefile); */
     } else {
@@ -1022,6 +1027,7 @@ static s7_pointer _dune_read_string(s7_scheme*s7, s7_pointer str)
  */
 static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 {
+    log_debug("G_DUNE_PKG");
     TRACE_ENTRY;
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP(1, "args", args);

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "gopt.h"
 #include "unity.h"
 #include "libs7.h"
@@ -94,7 +96,7 @@ void set_options(char *test, struct option options[])
 #endif
     if (options[FLAG_VERBOSE].count) {
         verbosity = options[FLAG_VERBOSE].count;
-        log_info("verbosity: %d", verbosity);
+        LOG_INFO(0, "verbosity: %d", verbosity);
         verbose = true;
         if (verbosity > 1) {
             libs7_verbose = true;
