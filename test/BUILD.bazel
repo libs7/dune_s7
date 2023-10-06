@@ -1,6 +1,9 @@
 load("@makeheaders//src:RULES.bzl", "makeheaders")
 
-load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
+load("//config/cc:CONFIG.bzl",
+     "BASE_COPTS",
+     "BASE_DEFINES",
+     "BASE_LINKOPTS")
 load("//test:CONFIG.bzl",
      "TEST_SRCS",
      # "TEST_DEPS",
@@ -17,7 +20,7 @@ INCLUDE_PATHS = TEST_INCLUDE_PATHS + [
 COPTS         = BASE_COPTS + INCLUDE_PATHS + [
     "-I$(GENDIR)/$(@)/test"
 ]
-DEFINES       = [] #["DEBUG_$(COMPILATION_MODE)"]
+DEFINES       = BASE_DEFINES
 LINKOPTS      = BASE_LINKOPTS
 TOOLCHAINS    = TEST_TOOLCHAINS
 TAGS          = TEST_TAGS + ["readers"]
