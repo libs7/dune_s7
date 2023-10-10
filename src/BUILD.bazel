@@ -40,7 +40,8 @@ s7_plugin(
     ],
     deps = DEPS,
     copts = COPTS + [
-        "-I$(GENDIR)/$(@)/src"
+        "-I$(GENDIR)/$(@)/src",
+        "'-D$(MODULE_NAME)_VERSION=\"$(MODULE_VERSION)\"'"
     ],
     local_defines = DEFINES,
     toolchains = TOOLCHAINS,

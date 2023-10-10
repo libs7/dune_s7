@@ -44,6 +44,8 @@
 
 #include "dune_s7.h"
 
+const char *dune_s7_version = DUNE_S7_VERSION;
+
 //extern FIXME
 #if defined(DEBUG_fastbuild)
 int  dunes7_debug;
