@@ -14,6 +14,13 @@
 
 bool multiline_string_mode = false;
 
+#if defined(PROFILE_fastbuild)
+#define DEBUG_LEVEL dune_s7_debug
+extern int  DEBUG_LEVEL;
+#define TRACE_FLAG dune_s7_trace
+extern bool TRACE_FLAG;
+#endif
+
 char *read_dunefile(const char *dunefile_name)
 {
     TRACE_ENTRY;
@@ -44,7 +51,7 @@ char *read_dunefile(const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
 #endif
 
@@ -70,7 +77,7 @@ char *read_dunefile(const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
 #endif
@@ -278,11 +285,11 @@ cleanup:
 const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
     TRACE_ENTRY;
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_TRACE(1, "dunefile: %s", dunefile_name);
                   //utstring_body(dunefile_name));
     s7_pointer cip = s7_current_input_port(s7);
-    TRACE_S7_DUMP(1, "cip", cip);
+    TRACE_S7_DUMP(1, "cip: %s", cip);
 #endif
     /* core/dune file size: 45572 */
     // 2K
@@ -320,7 +327,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
 #endif
 
@@ -344,7 +351,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
 #endif
@@ -352,7 +359,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 
     // now read the entire file
     size_t read_ct = fread(inbuf, 1, file_size, instream);
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "read_ct: %d", read_ct);
     LOG_DEBUG(1, "readed txt: %s", (char*)inbuf);
 #endif
@@ -473,21 +480,21 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 /* /\* https://stackoverflow.com/questions/54592366/replacing-one-character-in-a-string-with-multiple-characters-in-c *\/ */
 
 /*         if (cursor == NULL) { */
-/* /\* #if defined(DEBUG_fastbuild) *\/ */
+/* /\* #if defined(PROFILE_fastbuild) *\/ */
 /* /\*             if (mibl_debug) LOG_DEBUG(1, "remainder: '%s'", inptr); *\/ */
 /* /\* #endif *\/ */
 /*             size_t ct = strlcpy(outptr, (const char*)inptr, file_size); // strlen(outptr)); */
 /*             (void)ct;           /\* prevent -Wunused-variable *\/ */
-/* /\* #if defined(DEBUG_fastbuild) *\/ */
+/* /\* #if defined(PROFILE_fastbuild) *\/ */
 /* /\*             if (mibl_debug) LOG_DEBUG(1, "concatenated: '%s'", outptr); *\/ */
 /* /\* #endif *\/ */
 /*             break; */
 /*         } else { */
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*             LOG_ERROR(0, "FOUND and fixing \".)\" at pos: %d", cursor - inbuf); */
 /* #endif */
 /*             size_t ct = strlcpy(outptr, (const char*)inptr, cursor - inptr); */
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*             LOG_DEBUG(1, "copied %d chars", ct); */
 /*             /\* LOG_DEBUG(1, "to buf: '%s'", outptr); *\/ */
 /* #endif */
@@ -565,7 +572,7 @@ char *xread_dunefile(const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
 #endif
 
@@ -589,7 +596,7 @@ char *xread_dunefile(const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
 #endif
@@ -597,7 +604,7 @@ char *xread_dunefile(const char *dunefile_name)
 
     // now read the entire file
     size_t read_ct = fread(inbuf, 1, file_size, instream);
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "read_ct: %d", read_ct);
     LOG_DEBUG(1, "readed txt: %s", (char*)inbuf);
 #endif

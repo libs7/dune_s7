@@ -2,7 +2,7 @@
 #include "libs7.h"
 #include "unity.h"
 
-#include "include_test.h"
+#include "baddot_test.h"
 
 int test_main(int argc, char **argv);
 int main(int argc, char **argv)

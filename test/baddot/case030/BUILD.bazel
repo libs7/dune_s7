@@ -7,16 +7,14 @@ filegroup(
 load("//config/cc:CONFIG.bzl", "BASE_COPTS", "BASE_LINKOPTS")
 load("//test:CONFIG.bzl",
      "TEST_SRCS", "TEST_DEPS", "TEST_INCLUDE_PATHS",
-     "TEST_TOOLCHAINS",
      "TEST_TIMEOUT", "TEST_TAGS")
 
 SRCS = TEST_SRCS
 DEPS = TEST_DEPS + ["//test:tmain"]
 INCLUDE_PATHS = TEST_INCLUDE_PATHS
 COPTS         = BASE_COPTS + INCLUDE_PATHS
-DEFINES       = ["DEBUG_$(COMPILATION_MODE)"]
+DEFINES       = ["PROFILE_$(COMPILATION_MODE)"]
 LINKOPTS      = BASE_LINKOPTS
-TOOLCHAINS    = TEST_TOOLCHAINS
 TAGS          = TEST_TAGS + ["readers", "read-errors"]
 TIMEOUT       = TEST_TIMEOUT
 
@@ -28,12 +26,11 @@ cc_test(
     deps = ["//test:tmain"], # DEPS,
     copts = COPTS + [
         "-Wno-gnu-statement-expression",
-        "-I$(GENDIR)/$(@)/test",
-        "-DCASE='\"030\"'"
+        "-DCASE='\"030\"'",
+        "-I$(GENDIR)/test"
     ],
     data = [":data"],
     linkopts = LINKOPTS,
-    toolchains = TOOLCHAINS,
     timeout = TIMEOUT,
     tags = TAGS + ["readers"]
 )

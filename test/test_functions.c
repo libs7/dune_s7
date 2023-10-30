@@ -28,9 +28,12 @@ s7_pointer expected_fname7;
 
 s7_pointer data_expected;
 
-#if defined(DEBUG_fastbuild)
-extern int  dunes7_debug;
-extern bool dunes7_trace;
+#if defined(PROFILE_fastbuild)
+#define     TRACE_FLAG dune_s7_trace
+extern bool TRACE_FLAG;
+#define     DEBUG_LEVEL dune_s7_debug
+extern int  DEBUG_LEVEL;
+extern int  s7plugin_debug;
 #endif
 bool verbose;
 

@@ -33,9 +33,12 @@ s7_pointer expected_fname7;
 
 s7_pointer data_expected;
 
-#if defined(DEBUG_fastbuild)
-extern int  dunes7_debug;
-extern bool dunes7_trace;
+#if defined(PROFILE_fastbuild)
+#define     TRACE_FLAG dune_s7_trace
+extern bool TRACE_FLAG;
+#define     DEBUG_LEVEL dune_s7_debug
+extern int  DEBUG_LEVEL;
+extern int  s7plugin_debug;
 #endif
 bool verbose;
 
@@ -50,7 +53,7 @@ static void dunes7_print_usage(char *test) {
 
 enum OPTS {
     FLAG_HELP,
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     FLAG_DEBUG,
     FLAG_DEBUG_PLUGINS,
     FLAG_TRACE,
@@ -61,7 +64,7 @@ enum OPTS {
 
 struct option options[] = {
     /* 0 */
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     [FLAG_DEBUG] = {.long_name="debug", .short_name='d',
                     .flags=GOPT_ARGUMENT_FORBIDDEN | GOPT_REPEATABLE},
     [FLAG_DEBUG_PLUGINS] = {.long_name="plugin-debug",
@@ -83,15 +86,15 @@ void set_options(char *test, struct option options[])
         dunes7_print_usage(test);
         exit(EXIT_SUCCESS);
     }
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     if (options[FLAG_DEBUG].count) {
-        dunes7_debug = options[FLAG_DEBUG].count;
+        dune_s7_debug = options[FLAG_DEBUG].count;
     }
     if (options[FLAG_DEBUG_PLUGINS].count) {
-        plugin_debug = options[FLAG_DEBUG_PLUGINS].count;
+        s7plugin_debug = options[FLAG_DEBUG_PLUGINS].count;
     }
     if (options[FLAG_TRACE].count) {
-        dunes7_trace = true;
+        dune_s7_trace = true;
     }
 #endif
     if (options[FLAG_VERBOSE].count) {
@@ -112,7 +115,7 @@ int test_main(int argc, char **argv)
 
     set_options("dune_s7", options);
 
-    s7 = s7_plugin_initialize("incluude", argc, argv);
+    s7 = s7_plugin_initialize("dune_s7", argc, argv);
 
     libs7_load_plugin(s7, "dune");
 
@@ -120,7 +123,7 @@ int test_main(int argc, char **argv)
 
     UNITY_BEGIN();
 
-    test_runner();
+    test_runner(); /* defined in each test */
 
     /* s7_flush_output_port(s7, s7_current_output_port(s7)); */
     /* s7_flush_output_port(s7, s7_current_error_port(s7)); */

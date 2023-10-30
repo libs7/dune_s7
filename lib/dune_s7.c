@@ -29,12 +29,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
 #include <execinfo.h>           /* backtrace */
 #include <unistd.h>             /* write */
 #endif
 
-#include "log.h"
+#include "liblogc.h"
 #include "utstring.h"
 /* #include "error_handler_dune.h" */
 
@@ -46,10 +46,12 @@
 
 const char *dune_s7_version = DUNE_S7_VERSION;
 
-//extern FIXME
-#if defined(DEBUG_fastbuild)
-int  dunes7_debug;
-bool dunes7_trace;
+#if defined(PROFILE_fastbuild)
+#define TRACE_FLAG dune_s7_trace
+bool    TRACE_FLAG;
+#define DEBUG_LEVEL dune_s7_debug
+int     DEBUG_LEVEL;
+int     s7plugin_debug;
 #endif
 
 bool  verbose;
@@ -125,7 +127,7 @@ s7_pointer _fix_dunefile(s7_scheme *s7, const char *dunefile_name)
     /* TRACE_LOG_DEBUG(1, "reading corrected string:  %s", dunestring); */
     /* result = _dune_read_string(s7, s7_make_string(s7,dunestring)); */
 
-    TRACE_S7_DUMP(1, "fixed stanzas", result);
+    TRACE_S7_DUMP(1, "fixed stanzas: %s", result);
     s7_close_input_port(s7, _inport);
     /* free((void*)dunestring); */
     return result;
@@ -136,7 +138,7 @@ s7_pointer _fix_dunefile(s7_scheme *s7, const char *dunefile_name)
     if (s7_curlet(s7) == s7_nil(s7)) {
         log_warn("curlet is '()");
     }
-    TRACE_S7_DUMP(1, "curlet", s7_curlet(s7));
+    TRACE_S7_DUMP(1, "curlet: %s", s7_curlet(s7));
     /* } else { */
     /* LOG_DEBUG(1, "varletting curlet..."); */
     /* s7_varlet(s7, s7_curlet(s7), */
@@ -192,7 +194,7 @@ s7_pointer _fix_dunefile(s7_scheme *s7, const char *dunefile_name)
     return stanzas;
 }
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
 /* https://stackoverflow.com/questions/6934659/how-to-make-backtrace-backtrace-symbols-print-the-function-names */
 static void full_write(int fd, const char *buf, size_t len)
 {
@@ -251,7 +253,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     (void)args;
 
     s7_pointer _curlet = s7_curlet(s7);
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     /* LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0)); */
     /* char *tmp = s7_object_to_c_string(s7, _curlet); */
     /* LOG_DEBUG(1, "CURLET: %s", tmp); */
@@ -302,7 +304,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* gc_dune_inport = s7_gc_protect(s7, g_dunefile_port); */
     /* gc_dune_inport = s7_gc_protect(s7, g_dune_inport); */
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "reading stanzas", "");
     // from dunefile: %s", dunefile);
 #endif
@@ -313,7 +315,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* init_error_handling(); */
 
     /* s7_show_stack(s7); */
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
@@ -322,7 +324,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* repeat until all objects read */
     s7_pointer stanza;
     while(true) {
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
         LOG_TRACE(1, "reading next stanza", "");
 #endif
 
@@ -336,7 +338,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
             break;
         }
 
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
         TRACE_S7_DUMP(1, "Readed stanza", stanza);
         TRACE_S7_DUMP(1, "_dunes after read", _dunes);
 
@@ -353,7 +355,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
         /* s7_gc_unprotect_at(s7, gc_dune_inport); */
 
         if (stanza == s7_eof_object(s7)) {
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
             LOG_TRACE(1, "readed eof", "");
 #endif
             break;
@@ -473,7 +475,7 @@ s7_pointer _dune_read_thunk(s7_scheme *s7, s7_pointer args)
     /* s7_close_input_port(s7, inport); */
     // g_dune_inport must be closed by caller (e.g. with-input-from-file)
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "finished reading dunefile: %s", dunefile);
 #endif
 
@@ -493,7 +495,7 @@ s7_pointer _dune_read_thunk_s7; /* initialized by init fn */
 /* s7_pointer x_dune_read_thunk(s7_scheme *s7, s7_pointer args) { */
 /*     (void)args; */
 /*     TRACE_ENTRY; */
-/* /\* #if defined(DEBUG_fastbuild) *\/ */
+/* /\* #if defined(PROFILE_fastbuild) *\/ */
 /* /\*     print_c_backtrace(); *\/ */
 /* /\* #endif *\/ */
 /*     /\* LOG_DEBUG(1, "reading dunefile: %s", g_dunefile); *\/ */
@@ -553,7 +555,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     TRACE_S7_DUMP(1, "args", args);
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     s7_pointer owlet7 = s7_eval_c_string(s7,  "(owlet)");
     const char *owlet = s7_object_to_c_string(s7, owlet7);
     LOG_DEBUG(1, "owlet: %s", owlet);
@@ -579,7 +581,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
     }
     /* free((void*)errtype); */
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     // WARNING: (curlet) may be empty
     s7_pointer _curlet = s7_curlet(s7);
     TRACE_S7_DUMP(1, "catch curlet", _curlet);
@@ -617,7 +619,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
         log_warn("Error-line: %s", e);
         /* free((void*)e); */
     }
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
@@ -631,7 +633,7 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
     // or the owlet (key 'error-data).
     /* s7_pointer err_msg = s7_cadr(args); */
 
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*     TRACE_S7_DUMP(1, "s7_read_catcher err sym", err_sym); */
 /*     TRACE_S7_DUMP(1, "s7_read_catcher err msg", err_msg); */
 /* #endif */
@@ -675,7 +677,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
 
     s7_gc_on(s7, false);
 
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
 
@@ -716,7 +718,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                   s7_make_symbol(s7, "-dune-dunes"),
                   s7_nil(s7));
 
-/* #if defined(DEBUG_fastbuild) */
+/* #if defined(PROFILE_fastbuild) */
 /*         const char *dunefile = s7_port_filename(s7, g_dune_inport); */
 /*         LOG_DEBUG(1, "reading dunefile: %s", dunefile); */
 /* #endif */
@@ -737,7 +739,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                 /* s7_gc_unprotect_at(s7, gc_dune_inport); */
                 /* s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7); */
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
                 /* s7_pointer _curlet = s7_curlet(s7); */
                 /* TRACE_S7_DUMP(1, "fixing, curlet", _curlet); */
                 /* s7_pointer _outlet = s7_outlet(s7, _curlet); */
@@ -828,7 +830,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                 /* s7_gc_unprotect_at(s7, gc_dune_inport); */
                 s7_gc_unprotect_at(s7, gc_dune_read_catcher_s7);
 
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
                 s7_pointer _curlet = s7_curlet(s7);
                 TRACE_S7_DUMP(1, "fixing, curlet", _curlet);
                 s7_pointer _outlet = s7_outlet(s7, _curlet);
@@ -1032,7 +1034,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
     TRACE_ENTRY;
     /* s7_pointer p, arg; */
     TRACE_S7_DUMP(1, "args", args);
-#if defined(DEBUG_fastbuild)
+#if defined(PROFILE_fastbuild)
     s7_pointer _curlet = s7_curlet(s7);
     char *tmp = s7_object_to_c_string(s7, _curlet);
     LOG_DEBUG(1, "CURLET: %s", tmp);
@@ -1041,7 +1043,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 
     s7_pointer result;
 
-    /* #if defined(DEBUG_fastbuild) */
+    /* #if defined(PROFILE_fastbuild) */
     /*     print_c_backtrace(); */
     /* #endif */
 

@@ -1,7 +1,9 @@
-load("@cc_config//:CONFIG.bzl",
+load("@obazl_tools_cc//config:BASE.bzl",
      _BASE_COPTS    = "BASE_COPTS",
-     _BASE_LINKOPTS = "BASE_LINKOPTS")
+     _BASE_LINKOPTS = "BASE_LINKOPTS",
+     _define_module_version = "define_module_version")
 
+define_module_version = _define_module_version
 BASE_COPTS = _BASE_COPTS + select({
     ## macos:
     "//config/compilation_mode:fastbuild?": [
@@ -9,8 +11,5 @@ BASE_COPTS = _BASE_COPTS + select({
     "//conditions:default": []
 })
 BASE_LINKOPTS = _BASE_LINKOPTS
-BASE_DEFINES = ["DEBUG_$(COMPILATION_MODE)"]
+PROFILE       = ["PROFILE_$(COMPILATION_MODE)"]
 
-BASE_SRCS = []
-BASE_DEPS = []
-BASE_INCLUDE_PATHS = []
