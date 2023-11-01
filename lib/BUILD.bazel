@@ -31,7 +31,11 @@ s7_plugin(
         # "-I$(GENDIR)/$(@)/src",
         # "'-D$(MODULE_NAME)_VERSION=\"$(MODULE_VERSION)\"'"
     ],
-    defines = PROFILE,
+    defines = PROFILE + select({
+        ## for strdup, strndup:
+        "@platforms//os:linux": ["_POSIX_C_SOURCE=200809L"],
+        "//conditions:default": []
+    }),
     local_defines = define_module_version(),
     # toolchains = TOOLCHAINS,
     visibility = ["//visibility:public"]
