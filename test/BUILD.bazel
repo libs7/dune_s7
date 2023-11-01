@@ -91,15 +91,6 @@ makeheaders(
         "//test/baddot:baddot_test.c",
         "//test/include:include_test.c"
     ],
-    # hdrs_renamed = {
-    #     ## same test.h will work for all include cases
-    #     "//test/include/case010:test.c": "include_test.h"
-    # },
-        # # "//test/include/case010:case010_test.c",
-        # "//test/include/case011:case011_test.c",
-        # # "//test/include/case015:case015_test.c",
-        # # "//test/include/case016:case016_test.c",
-    # ],
     additional_srcs  = ["@makeheaders//logging:ansi_colors.h"]
     + select({
         "@makeheaders//compilation_mode:fastbuild": [

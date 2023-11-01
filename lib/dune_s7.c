@@ -48,10 +48,12 @@ const char *dune_s7_version = DUNE_S7_VERSION;
 
 #if defined(PROFILE_fastbuild)
 #define TRACE_FLAG dune_s7_trace
-bool    TRACE_FLAG;
+bool    TRACE_FLAG = 0;
 #define DEBUG_LEVEL dune_s7_debug
-int     DEBUG_LEVEL;
-int     s7plugin_debug;
+int     DEBUG_LEVEL = 0;
+#define S7_DEBUG_LEVEL libs7_debug
+extern int libs7_debug;
+int     s7plugin_debug = 0;
 #endif
 
 bool  verbose;
@@ -1033,7 +1035,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
 {
     TRACE_ENTRY;
     /* s7_pointer p, arg; */
-    TRACE_S7_DUMP(1, "args", args);
+    TRACE_S7_DUMP(1, "args: %s", args);
 #if defined(PROFILE_fastbuild)
     s7_pointer _curlet = s7_curlet(s7);
     char *tmp = s7_object_to_c_string(s7, _curlet);
@@ -1059,7 +1061,7 @@ static s7_pointer g_dune_read(s7_scheme *s7, s7_pointer args)
         if (s7_is_input_port(s7, src)) {
             LOG_DEBUG(1, "SOURCE: input port", "");
             result = _dune_read_input_port(s7, src);
-            TRACE_S7_DUMP(1, "_dune_read_input_port res", result);
+            TRACE_S7_DUMP(1, "_dune_read_input_port res: %s", result);
             return result;
         }
         else if (s7_is_string(src)) {

@@ -19,6 +19,9 @@ bool multiline_string_mode = false;
 extern int  DEBUG_LEVEL;
 #define TRACE_FLAG dune_s7_trace
 extern bool TRACE_FLAG;
+#define S7_DEBUG_LEVEL libs7_debug
+extern int     libs7_debug;
+extern int     s7plugin_debug;
 #endif
 
 char *read_dunefile(const char *dunefile_name)
@@ -37,7 +40,7 @@ char *read_dunefile(const char *dunefile_name)
     fd = open(dunefile_name, O_RDONLY);
     if (fd == -1) {
         /* Handle error */
-        log_error("fd open error: %s", dunefile_name);
+        fprintf(stderr, "fd open error: %s\n", dunefile_name);
         LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
         exit(EXIT_FAILURE);
     }
@@ -45,7 +48,8 @@ char *read_dunefile(const char *dunefile_name)
     /* log_debug("fopened %s", dunefile_name); */
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
         /* Handle error */
-        LOG_ERROR(0, "fstat error", "");
+        fprintf(stderr, "fstat error: %s\n",
+                dunefile_name);
         // exit?
         goto cleanup;
     }
@@ -253,7 +257,7 @@ char *read_dunefile(const char *dunefile_name)
        fgetc returns EOF. */
     if (feof(instream)) {
         if (errno != 0) {
-            log_error("fgetc error for %s: %s",
+            fprintf(stderr, "fgetc error for %s: %s\n",
                       dunefile_name, strerror(errno));
         }
     } else {
@@ -311,7 +315,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     fd = open(dunefile_name, O_RDONLY);
     if (fd == -1) {
         /* Handle error */
-        LOG_ERROR(0, "fd open error: %s", dunefile_name);
+        fprintf(stderr, "fd open error: %s\n", dunefile_name);
         LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
         s7_error(s7, s7_make_symbol(s7, "fd-open-error"),
                  s7_list(s7, 3,
@@ -322,7 +326,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
         /* Handle error */
-        LOG_ERROR(0, "fstat error", "");
+        fprintf(stderr, "fstat error on %s\n", dunefile_name);
         goto cleanup;
     }
 
@@ -334,7 +338,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     inbuf = (char*)calloc(file_size, sizeof(char));
     if (inbuf == NULL) {
         /* Handle error */
-        LOG_ERROR(0, "malloc file_size fail", "");
+        fprintf(stderr, "malloc file_size fail\n");
         goto cleanup;
     }
 
@@ -343,7 +347,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     instream = fdopen(fd, "r");
     if (instream == NULL) {
         /* Handle error */
-        LOG_ERROR(0, "fdopen failure: %s", dunefile_name);
+        fprintf(stderr, "fdopen failure: %s", dunefile_name);
         /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
         /*        dunefile_name); */
                /* utstring_body(dunefile_name)); */
@@ -368,7 +372,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
             /* printf(RED "ERROR" CRESET "fread error 2 for %s\n", */
             /*        dunefile_name); */
             /* utstring_body(dunefile_name)); */
-            LOG_ERROR(0, "fread error 2 for %s\n",
+            fprintf(stderr, "fread error 2 for %s\n",
                       dunefile_name);
             /* utstring_body(dunefile_name)); */
             exit(EXIT_FAILURE); //FIXME: exit gracefully
@@ -377,13 +381,13 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
                 /* printf(RED "ERROR" CRESET "fread error 3 for %s\n", */
                 /*        dunefile_name); */
                 /* utstring_body(dunefile_name)); */
-                LOG_ERROR(0, "fread error 3 for %s\n",
+                fprintf(stderr, "fread error 3 for %s\n",
                           dunefile_name);
                 /* utstring_body(dunefile_name)); */
                 exit(EXIT_FAILURE); //FIXME: exit gracefully
             } else {
                 //FIXME
-                LOG_ERROR(0, "WTF????????????????", "");
+                fprintf(stderr, "WTF????????????????\n");
                 goto cleanup;
             }
         }
@@ -556,7 +560,7 @@ char *xread_dunefile(const char *dunefile_name)
     fd = open(dunefile_name, O_RDONLY);
     if (fd == -1) {
         /* Handle error */
-        LOG_ERROR(0, "fd open error: %s", dunefile_name);
+        fprintf(stderr, "fd open error: %s\n", dunefile_name);
         LOG_TRACE(1, "cwd: %s", getcwd(NULL, 0));
         /* s7_error(s7, s7_make_symbol(s7, "fd-open-error"), */
         /*          s7_list(s7, 3, */
@@ -567,7 +571,7 @@ char *xread_dunefile(const char *dunefile_name)
 
     if ((fstat(fd, &stbuf) != 0) || (!S_ISREG(stbuf.st_mode))) {
         /* Handle error */
-        LOG_ERROR(0, "fstat error", "");
+        fprintf(stderr, "fstat error on %s\n", dunefile_name);
         goto cleanup;
     }
 
@@ -579,7 +583,7 @@ char *xread_dunefile(const char *dunefile_name)
     inbuf = (char*)calloc(file_size, sizeof(char));
     if (inbuf == NULL) {
         /* Handle error */
-        LOG_ERROR(0, "malloc file_size fail", "");
+        fprintf(stderr, "malloc file_size fail\n");
         goto cleanup;
     }
 
@@ -588,7 +592,7 @@ char *xread_dunefile(const char *dunefile_name)
     instream = fdopen(fd, "r");
     if (instream == NULL) {
         /* Handle error */
-        LOG_ERROR(0, "fdopen failure: %s", dunefile_name);
+        fprintf(stderr, "fdopen failure: %s\n", dunefile_name);
         /* printf(RED "ERROR" CRESET "fdopen failure: %s\n", */
         /*        dunefile_name); */
                /* utstring_body(dunefile_name)); */
@@ -613,8 +617,8 @@ char *xread_dunefile(const char *dunefile_name)
             /* printf(RED "ERROR" CRESET "fread error 2 for %s\n", */
             /*        dunefile_name); */
             /* utstring_body(dunefile_name)); */
-            LOG_ERROR(0, "fread error 2 for %s\n",
-                      dunefile_name);
+            fprintf(stderr, "fread error 2 for %s\n",
+                    dunefile_name);
             /* utstring_body(dunefile_name)); */
             exit(EXIT_FAILURE); //FIXME: exit gracefully
         } else {
@@ -622,13 +626,13 @@ char *xread_dunefile(const char *dunefile_name)
                 /* printf(RED "ERROR" CRESET "fread error 3 for %s\n", */
                 /*        dunefile_name); */
                 /* utstring_body(dunefile_name)); */
-                LOG_ERROR(0, "fread error 3 for %s\n",
-                          dunefile_name);
+                fprintf(stderr, "fread error 3 for %s\n",
+                        dunefile_name);
                 /* utstring_body(dunefile_name)); */
                 exit(EXIT_FAILURE); //FIXME: exit gracefully
             } else {
                 //FIXME
-                LOG_ERROR(0, "WTF????????????????", "");
+                fprintf(stderr, "HUH????????????????\n");
                 goto cleanup;
             }
         }
