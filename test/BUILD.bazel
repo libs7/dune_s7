@@ -94,17 +94,12 @@ makeheaders(
     additional_srcs  = ["@makeheaders//logging:ansi_colors.h"]
     + select({
         "@makeheaders//compilation_mode:fastbuild": [
+            "@libs7//logging:s7_macros_debug.h",
             "@makeheaders//logging:macros_debug.h"
         ],
         "//conditions:default": [
+            "@libs7//logging:s7_macros_ndebug.h",
             "@makeheaders//logging:macros_ndebug.h"
-        ]
-    }) + select({
-        "@makeheaders//compilation_mode:fastbuild": [
-            "@libs7//logging:s7_macros_debug.h"
-        ],
-        "//conditions:default": [
-            "@libs7//logging:s7_macros_ndebug.h"
         ]
     }),
 )

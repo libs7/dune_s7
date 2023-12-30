@@ -4,7 +4,18 @@
 
 #include "test_functions.h"
 #include "macros.h"
-/* #include "s7plugin_test_config.h" */
+
+#if defined(PROFILE_fastbuild)
+#define TRACE_FLAG  dune_s7_trace
+#define DEBUG_LEVEL dune_s7_debug
+extern bool    TRACE_FLAG;
+extern int     DEBUG_LEVEL;
+
+#define S7_DEBUG_LEVEL libs7_debug
+extern int  libs7_debug;
+extern bool s7plugin_trace;
+extern int  s7plugin_debug;
+#endif
 
 /* extern struct option options[]; */
 
@@ -60,8 +71,8 @@ void test_read_file_port(void) {
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
     s7_close_input_port(s7, inport);
 
-    TRACE_S7_DUMP(0, "actual", actual);
-    TRACE_S7_DUMP(0, "expected", data_expected);
+    TRACE_S7_DUMP(0, "actual: %s", actual);
+    TRACE_S7_DUMP(0, "expected: %s", data_expected);
 
     flag = APPLY_2("equal?", actual, data_expected);
     TEST_ASSERT_TRUE_MESSAGE(s7_boolean(s7, flag), data_fname_str);
@@ -80,8 +91,8 @@ void test_with_input_from_file(void) {
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
-    TRACE_S7_DUMP(0, "actual", actual);
-    TRACE_S7_DUMP(0, "expected", data_expected);
+    TRACE_S7_DUMP(0, "actual: %s", actual);
+    TRACE_S7_DUMP(0, "expected: %s", data_expected);
     flag = APPLY_2("equal?", actual, data_expected);
     TEST_ASSERT_TRUE_MESSAGE(s7_boolean(s7, flag), data_fname_str);
 }
@@ -99,8 +110,8 @@ void test_call_with_input_file(void) {
     actual = s7_eval_c_string_with_environment(s7, cmd, readlet);
     flag = APPLY_1("alist?", actual);
     TEST_ASSERT_TRUE(s7_boolean(s7, flag));
-    TRACE_S7_DUMP(0, "actual", actual);
-    TRACE_S7_DUMP(0, "expected", data_expected);
+    TRACE_S7_DUMP(0, "actual: %s", actual);
+    TRACE_S7_DUMP(0, "expected: %s", data_expected);
     flag = APPLY_2("equal?", actual, data_expected);
     TEST_ASSERT_TRUE_MESSAGE(s7_boolean(s7, flag), data_fname_str);
 }
@@ -119,7 +130,7 @@ s7_pointer read_expected(char *fname) {
 
     /* cmd = "(with-input-from-file datafile dune:read)"; */
     /* actual = s7_eval_c_string_with_environment(s7, cmd, readlet); */
-    /* TRACE_S7_DUMP(0, "actual", actual); */
+    /* TRACE_S7_DUMP(0, "actual: %s", actual); */
 
     // use read not dune:read for expected
     cmd = "(with-input-from-file expected read)";

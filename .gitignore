@@ -3,6 +3,7 @@
 .bazelversion
 .bazel
 bazel-*
+tarballs
 *.gz
 
 # Prerequisites
