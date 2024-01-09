@@ -293,6 +293,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     LOG_TRACE(1, "dunefile: %s", dunefile_name);
                   //utstring_body(dunefile_name));
     s7_pointer cip = s7_current_input_port(s7);
+    (void)cip;
     TRACE_S7_DUMP(1, "cip: %s", cip);
 #endif
     /* core/dune file size: 45572 */

@@ -595,11 +595,13 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
         /* s7_error(s7, s7_make_symbol(s7, "empty curlet"), s7_nil(s7)); */
     } else {
         s7_pointer _inport;
+        (void)_inport;
         _inport = s7_let_ref(s7, s7_curlet(s7),
                              s7_make_symbol(s7, "-dune-inport"));
         TRACE_S7_DUMP(1, "catch curlet inport", _inport);
 
         s7_pointer _dunes;
+        (void)_dunes;
         _dunes = s7_let_ref(s7, s7_curlet(s7),
                                        s7_make_symbol(s7, "-dune-dunes"));
         TRACE_S7_DUMP(1, "catch dunes", _dunes);
@@ -836,6 +838,7 @@ static s7_pointer _g_dune_read(s7_scheme *s7, s7_pointer args)
                 s7_pointer _curlet = s7_curlet(s7);
                 TRACE_S7_DUMP(1, "fixing, curlet", _curlet);
                 s7_pointer _outlet = s7_outlet(s7, _curlet);
+                (void)_outlet;
                 TRACE_S7_DUMP(1, "fixing, outlet", _outlet);
 #endif
                 s7_pointer fixed = _fix_dunefile(s7, dunefile);
