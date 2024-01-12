@@ -25,6 +25,7 @@ s7_plugin(
         "dunefile_reader.c",
         ":mkhdrs",
     ],
+    hdrs = ["dune_s7.h"],
     includes = ["."],
     deps = DEPS,
     copts = COPTS + [
@@ -44,7 +45,8 @@ s7_plugin(
 ################################################################
 makeheaders(
     name             = "mkhdrs",
-    hdrs_srcs        = ["dune_s7.c", "dunefile_reader.c"],
+    hdrs_renamed = {"dune_s7.c": "dune_s7_internal.h"},
+    hdrs_srcs        = ["dunefile_reader.c"],
     additional_srcs  = ["@makeheaders//logging:ansi_colors.h"]
     + select({
         "@makeheaders//compilation_mode:fastbuild": [
@@ -59,6 +61,25 @@ makeheaders(
         ],
         "//conditions:default": [
             "@libs7//logging:s7_macros_ndebug.h"
+        ]
+    }),
+)
+
+makeheaders(
+    name             = "export_hdr",
+    out              = "dune_s7.h",
+    export_interface = True,
+    hdrs_srcs        = ["dune_s7.c", "dunefile_reader.c"],
+    additional_srcs = [
+        "@makeheaders//logging:ansi_colors.h"
+    ] + select({
+        "@makeheaders//compilation_mode:fastbuild": [
+            "@libs7//logging:s7_macros_debug.h",
+            "@makeheaders//logging:macros_debug.h"
+        ],
+        "//conditions:default": [
+            "@libs7//logging:s7_macros_ndebug.h",
+            "@makeheaders//logging:macros_ndebug.h"
         ]
     }),
 )

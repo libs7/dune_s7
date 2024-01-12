@@ -42,7 +42,7 @@
 #include "libs7.h"
 #endif
 
-#include "dune_s7.h"
+#include "dune_s7_internal.h"
 
 const char *dune_s7_version = DUNE_S7_VERSION;
 

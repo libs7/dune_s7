@@ -24,7 +24,7 @@ extern int     libs7_debug;
 extern int     s7plugin_debug;
 #endif
 
-char *read_dunefile(const char *dunefile_name)
+EXPORT char *read_dunefile(const char *dunefile_name)
 {
     TRACE_ENTRY;
     /* log_debug("df: %s", dunefile_name); */
