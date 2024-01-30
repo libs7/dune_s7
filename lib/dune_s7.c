@@ -56,7 +56,7 @@ extern int libs7_debug;
 int     s7plugin_debug = 0;
 #endif
 
-bool  verbose;
+/* bool  verbose; */
 
 s7_pointer c_pointer_string, string_string, character_string, boolean_string, real_string, complex_string;
 s7_pointer integer_string;
@@ -606,9 +606,8 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
                                        s7_make_symbol(s7, "-dune-dunes"));
         TRACE_S7_DUMP(1, "catch dunes", _dunes);
     }
-#endif
 
-    if (verbose) {
+    /* if (verbose) { */
         log_warn("Error reading dunefile: %s", errfile);
         e7 = s7_eval_c_string(s7,  "((owlet) 'error-data)");
         e = s7_object_to_c_string(s7, e7);
@@ -622,7 +621,9 @@ static s7_pointer _dune_read_catcher(s7_scheme *s7, s7_pointer args)
         e = s7_object_to_c_string(s7, e7);
         log_warn("Error-line: %s", e);
         /* free((void*)e); */
-    }
+    /* } */
+#endif
+
 /* #if defined(PROFILE_fastbuild) */
 /*     print_c_backtrace(); */
 /* #endif */
