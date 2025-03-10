@@ -21,6 +21,7 @@ test_suite(
     tests = [
         "//test/readers/case010:test",
         "//test/readers/case020:test",
+        "//test/readers/case030:test",
     ]
 )
 

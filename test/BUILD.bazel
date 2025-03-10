@@ -91,15 +91,15 @@ makeheaders(
         "//test/baddot:baddot_test.c",
         "//test/include:include_test.c"
     ],
-    additional_srcs  = ["@makeheaders//logging:ansi_colors.h"]
+    additional_srcs  = ["@liblogc//macros:ansi_colors.h"]
     + select({
-        "@makeheaders//compilation_mode:fastbuild": [
-            "@libs7//logging:s7_macros_debug.h",
-            "@makeheaders//logging:macros_debug.h"
+        "@obazl_config_cc//profile:dev?": [
+            "@libs7//macros:s7_logging_debug.h",
+            "@liblogc//macros:logging_debug.h"
         ],
         "//conditions:default": [
-            "@libs7//logging:s7_macros_ndebug.h",
-            "@makeheaders//logging:macros_ndebug.h"
+            "@libs7//macros:s7_logging_ndebug.h",
+            "@liblogc//macros:logging_ndebug.h"
         ]
     }),
 )

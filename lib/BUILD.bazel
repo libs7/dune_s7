@@ -47,20 +47,15 @@ makeheaders(
     name             = "mkhdrs",
     hdrs_renamed = {"dune_s7.c": "dune_s7_internal.h"},
     hdrs_srcs        = ["dunefile_reader.c"],
-    additional_srcs  = ["@makeheaders//logging:ansi_colors.h"]
-    + select({
-        "@makeheaders//compilation_mode:fastbuild": [
-            "@makeheaders//logging:macros_debug.h"
+    additional_srcs  = select({
+        "@obazl_config_cc//profile:dev?": [
+            "@liblogc//macros:ansi_colors.h",
+            "@liblogc//macros:logging_debug.h",
+            "@libs7//macros:s7_logging_debug.h"
         ],
         "//conditions:default": [
-            "@makeheaders//logging:macros_ndebug.h"
-        ]
-    }) + select({
-        "@makeheaders//compilation_mode:fastbuild": [
-            "@libs7//logging:s7_macros_debug.h"
-        ],
-        "//conditions:default": [
-            "@libs7//logging:s7_macros_ndebug.h"
+            "@liblogc//macros:logging_ndebug.h",
+            "@libs7//macros:s7_logging_ndebug.h"
         ]
     }),
 )
@@ -70,16 +65,17 @@ makeheaders(
     out              = "dune_s7.h",
     export_interface = True,
     hdrs_srcs        = ["dune_s7.c", "dunefile_reader.c"],
-    additional_srcs = [
-        "@makeheaders//logging:ansi_colors.h"
-    ] + select({
-        "@makeheaders//compilation_mode:fastbuild": [
-            "@libs7//logging:s7_macros_debug.h",
-            "@makeheaders//logging:macros_debug.h"
-        ],
-        "//conditions:default": [
-            "@libs7//logging:s7_macros_ndebug.h",
-            "@makeheaders//logging:macros_ndebug.h"
-        ]
-    }),
+    additional_srcs = ["@libs7//macros:s7_logging_ndebug.h",
+                       "@liblogc//macros:logging_ndebug.h"]
+    #     "@liblogc//macros:ansi_colors.h"
+    # ] + select({
+    #     "@obazl_config_cc//profile:dev?": [
+    #         "@libs7//macros:s7_logging_debug.h",
+    #         "@liblogc//macros:logging_debug.h"
+    #     ],
+    #     "//conditions:default": [
+    #         "@libs7//macros:s7_logging_ndebug.h",
+    #         "@liblogc//macros:logging_ndebug.h"
+    #     ]
+    # }),
 )

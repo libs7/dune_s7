@@ -34,9 +34,9 @@ s7_pointer expected_fname7;
 s7_pointer data_expected;
 
 #if defined(PROFILE_fastbuild)
-#define     TRACE_FLAG dune_s7_trace
+#define     TRACE_FLAG trace_dune_s7
 extern bool TRACE_FLAG;
-#define     DEBUG_LEVEL dune_s7_debug
+#define     DEBUG_LEVEL debug_dune_s7
 extern int  DEBUG_LEVEL;
 extern int  s7plugin_debug;
 #endif
@@ -90,13 +90,13 @@ int  libs7_verbosity;
 /*     } */
 /* #if defined(PROFILE_fastbuild) */
 /*     if (options[FLAG_DEBUG].count) { */
-/*         dune_s7_debug = options[FLAG_DEBUG].count; */
+/*         debug_dune_s7 = options[FLAG_DEBUG].count; */
 /*     } */
 /*     if (options[FLAG_DEBUG_PLUGINS].count) { */
 /*         s7plugin_debug = options[FLAG_DEBUG_PLUGINS].count; */
 /*     } */
 /*     if (options[FLAG_TRACE].count) { */
-/*         dune_s7_trace = true; */
+/*         trace_dune_s7 = true; */
 /*     } */
 /* #endif */
 /*     if (options[FLAG_VERBOSE].count) { */
@@ -120,6 +120,10 @@ int test_main(int argc, char **argv)
     s7 = s7_plugin_initialize("dune_s7", argc, argv);
 
     libs7_load_plugin(s7, "dune");
+
+    debug_dune_s7 = 1;
+    trace_dune_s7 = true;
+    libs7_debug = 1;
 
     init_unity(s7);
 

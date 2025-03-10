@@ -14,15 +14,13 @@
 
 bool multiline_string_mode = false;
 
-#if defined(PROFILE_fastbuild)
-#define DEBUG_LEVEL dune_s7_debug
+#define DEBUG_LEVEL debug_dune_s7
 extern int  DEBUG_LEVEL;
-#define TRACE_FLAG dune_s7_trace
+#define TRACE_FLAG trace_dune_s7
 extern bool TRACE_FLAG;
 #define S7_DEBUG_LEVEL libs7_debug
 extern int     libs7_debug;
 extern int     s7plugin_debug;
-#endif
 
 EXPORT char *read_dunefile(const char *dunefile_name)
 {
@@ -55,9 +53,7 @@ EXPORT char *read_dunefile(const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
-#endif
 
     /* allocate enough to handle expansion due to
        converting '.' to "./" */
@@ -81,10 +77,8 @@ EXPORT char *read_dunefile(const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
-#endif
     }
 
     int c;
@@ -289,12 +283,12 @@ cleanup:
 const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
 {
     TRACE_ENTRY;
-#if defined(PROFILE_fastbuild)
+#if defined(PROFILE_dev)
     LOG_TRACE(1, "dunefile: %s", dunefile_name);
                   //utstring_body(dunefile_name));
     s7_pointer cip = s7_current_input_port(s7);
     (void)cip;
-    TRACE_S7_DUMP(1, "cip: %s", cip);
+    LOG_S7_DEBUG(1, "cip:", cip);
 #endif
     /* core/dune file size: 45572 */
     // 2K
@@ -332,9 +326,7 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
-#endif
 
     inbuf = (char*)calloc(file_size, sizeof(char));
     if (inbuf == NULL) {
@@ -356,18 +348,14 @@ const char *dunefile_to_string(s7_scheme *s7, const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
-#endif
     }
 
     // now read the entire file
     size_t read_ct = fread(inbuf, 1, file_size, instream);
-#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "read_ct: %d", read_ct);
     LOG_DEBUG(1, "readed txt: %s", (char*)inbuf);
-#endif
     if (read_ct != file_size) {
         if (ferror(instream) != 0) {
             /* printf(RED "ERROR" CRESET "fread error 2 for %s\n", */
@@ -577,9 +565,7 @@ char *xread_dunefile(const char *dunefile_name)
     }
 
     file_size = stbuf.st_size;
-#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "filesize: %d", file_size);
-#endif
 
     inbuf = (char*)calloc(file_size, sizeof(char));
     if (inbuf == NULL) {
@@ -601,18 +587,14 @@ char *xread_dunefile(const char *dunefile_name)
         close(fd);
         goto cleanup;
     } else {
-#if defined(PROFILE_fastbuild)
         LOG_DEBUG(1, "fdopened %s", dunefile_name);
         /* utstring_body(dunefile_name)); */
-#endif
     }
 
     // now read the entire file
     size_t read_ct = fread(inbuf, 1, file_size, instream);
-#if defined(PROFILE_fastbuild)
     LOG_DEBUG(1, "read_ct: %d", read_ct);
     LOG_DEBUG(1, "readed txt: %s", (char*)inbuf);
-#endif
     if (read_ct != file_size) {
         if (ferror(instream) != 0) {
             /* printf(RED "ERROR" CRESET "fread error 2 for %s\n", */
