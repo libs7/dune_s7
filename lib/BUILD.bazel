@@ -48,7 +48,7 @@ makeheaders(
     hdrs_renamed = {"dune_s7.c": "dune_s7_internal.h"},
     hdrs_srcs        = ["dunefile_reader.c"],
     additional_srcs  = select({
-        "@obazl_config_cc//profile:dev?": [
+        "@obazl_tools_cc//profile:dev?": [
             "@liblogc//macros:ansi_colors.h",
             "@liblogc//macros:logging_debug.h",
             "@libs7//macros:s7_logging_debug.h"
@@ -69,7 +69,7 @@ makeheaders(
                        "@liblogc//macros:logging_ndebug.h"]
     #     "@liblogc//macros:ansi_colors.h"
     # ] + select({
-    #     "@obazl_config_cc//profile:dev?": [
+    #     "@obazl_tools_cc//profile:dev?": [
     #         "@libs7//macros:s7_logging_debug.h",
     #         "@liblogc//macros:logging_debug.h"
     #     ],
