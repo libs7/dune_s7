@@ -121,9 +121,9 @@ int test_main(int argc, char **argv)
 
     libs7_load_plugin(s7, "dune");
 
-    debug_dune_s7 = 1;
-    trace_dune_s7 = true;
-    libs7_debug = 1;
+    /* debug_dune_s7 = 1; */
+    /* trace_dune_s7 = true; */
+    /* libs7_debug = 1; */
 
     init_unity(s7);
 
